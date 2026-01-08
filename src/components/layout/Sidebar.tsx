@@ -9,12 +9,15 @@ import {
   LogOut,
   LayoutDashboard,
   Users,
-  Crown
+  Crown,
+  User
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useCurrentUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -37,9 +40,15 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { data: profile } = useCurrentUserProfile();
 
   const handleClick = () => {
     onNavigate?.();
+  };
+
+  const getInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   return (
@@ -110,23 +119,32 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-sidebar-border">
-        <div className="mb-4 px-4">
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted-foreground">Logado como</p>
-            {isAdmin ? (
-              <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
-                <Crown className="w-3 h-3 mr-1" />
-                Gerente
-              </Badge>
-            ) : (
-              <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
-                Funcionário
-              </Badge>
-            )}
+        <div className="mb-4 px-2">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 border-2 border-sidebar-border">
+              <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name} />
+              <AvatarFallback className={isAdmin ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}>
+                {getInitials(profile?.full_name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                {isAdmin ? (
+                  <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Gerente
+                  </Badge>
+                ) : (
+                  <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
+                    Funcionário
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm font-medium text-sidebar-foreground truncate mt-1">
+                {profile?.full_name || user?.email}
+              </p>
+            </div>
           </div>
-          <p className="text-sm font-medium text-sidebar-foreground truncate">
-            {user?.email}
-          </p>
         </div>
         <button
           onClick={() => signOut()}
