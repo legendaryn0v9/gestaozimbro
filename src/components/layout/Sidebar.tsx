@@ -7,10 +7,14 @@ import {
   TrendingUp, 
   TrendingDown,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Users,
+  Crown
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { useIsAdmin } from '@/hooks/useUserRoles';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -21,9 +25,14 @@ const menuItems = [
   { icon: ClipboardList, label: 'Relatórios', path: '/relatorios' },
 ];
 
+const adminMenuItems = [
+  { icon: Users, label: 'Usuários', path: '/usuarios' },
+];
+
 export function Sidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -41,7 +50,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -60,11 +69,47 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <>
+            <div className="pt-4 pb-2">
+              <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Administração
+              </p>
+            </div>
+            {adminMenuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-primary'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                  )}
+                >
+                  <item.icon className={cn('w-5 h-5', isActive && 'text-sidebar-primary')} />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <div className="p-4 border-t border-sidebar-border">
         <div className="mb-4 px-4">
-          <p className="text-sm text-muted-foreground">Logado como</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">Logado como</p>
+            {isAdmin && (
+              <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
+                <Crown className="w-3 h-3 mr-1" />
+                Admin
+              </Badge>
+            )}
+          </div>
           <p className="text-sm font-medium text-sidebar-foreground truncate">
             {user?.email}
           </p>
