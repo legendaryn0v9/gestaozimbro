@@ -120,50 +120,59 @@ export default function Bar() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-amber flex items-center justify-center">
-                <Wine className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-display font-bold text-gradient">Bar</h1>
-                <p className="text-muted-foreground">{items.length} itens no estoque</p>
-              </div>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-amber flex items-center justify-center">
+              <Wine className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Bar</h1>
+              <p className="text-sm text-muted-foreground">{items.length} itens no estoque</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button
               onClick={() => setEntradaDialogOpen(true)}
               variant="outline"
-              className="border-success text-success hover:bg-success/10"
+              size="sm"
+              className="border-success text-success hover:bg-success/10 flex-1 sm:flex-none"
             >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Entrada
+              <TrendingUp className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Entrada</span>
+              <span className="xs:hidden">+</span>
             </Button>
             <Button
               onClick={() => setSaidaDialogOpen(true)}
               variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive/10"
+              size="sm"
+              className="border-destructive text-destructive hover:bg-destructive/10 flex-1 sm:flex-none"
             >
-              <TrendingDown className="w-4 h-4 mr-2" />
-              Saída
+              <TrendingDown className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Saída</span>
+              <span className="xs:hidden">-</span>
             </Button>
-            <Button onClick={() => openAddDialog()} className="bg-gradient-amber text-primary-foreground hover:opacity-90">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Item
+            <Button 
+              onClick={() => openAddDialog()} 
+              size="sm"
+              className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
+            >
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Novo Item</span>
+              <span className="xs:hidden">Novo</span>
             </Button>
           </div>
         </div>
 
-        <div className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        {/* Search */}
+        <div className="relative mb-6 lg:mb-8">
+          <Search className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 lg:w-5 h-4 lg:h-5 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar itens do bar..."
-            className="pl-12 h-12 bg-input border-border"
+            placeholder="Buscar itens..."
+            className="pl-10 lg:pl-12 h-10 lg:h-12 bg-input border-border text-sm lg:text-base"
           />
         </div>
 
@@ -226,7 +235,8 @@ export default function Bar() {
                     </Button>
                   </div>
 
-                  <div className="flex gap-2 flex-wrap">
+                  {/* Subcategory tabs - horizontal scroll on mobile */}
+                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:flex-wrap scrollbar-hide">
                     {category.subcategories.map((sub) => {
                       const isSelected = selectedSub === sub;
                       const subCount =
@@ -243,7 +253,7 @@ export default function Bar() {
                           size="sm"
                           onClick={() => handleSubcategoryChange(category.name, sub)}
                           className={cn(
-                            'h-8 text-xs',
+                            'h-8 text-xs whitespace-nowrap flex-shrink-0',
                             isSelected ? `bg-gradient-to-r ${category.gradient} text-white border-0` : 'hover:bg-secondary'
                           )}
                         >
@@ -268,7 +278,7 @@ export default function Bar() {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
                       {categoryItems.map((item) => (
                         <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
                       ))}

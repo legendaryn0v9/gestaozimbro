@@ -29,14 +29,22 @@ const adminMenuItems = [
   { icon: Users, label: 'Usuários', path: '/usuarios' },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { isAdmin } = useIsAdmin();
 
+  const handleClick = () => {
+    onNavigate?.();
+  };
+
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-      <div className="p-6 border-b border-sidebar-border">
+    <aside className="h-full lg:fixed lg:left-0 lg:top-0 lg:h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+      <div className="p-6 border-b border-sidebar-border hidden lg:block">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-amber flex items-center justify-center">
             <Package className="w-5 h-5 text-primary-foreground" />
@@ -50,13 +58,14 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto pt-6 lg:pt-4">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
+              onClick={handleClick}
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
                 isActive
@@ -83,6 +92,7 @@ export function Sidebar() {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={handleClick}
                   className={cn(
                     'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
                     isActive
