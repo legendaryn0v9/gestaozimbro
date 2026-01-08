@@ -1,7 +1,5 @@
 // API Service for PHP/MySQL Backend
-// ⚠️ IMPORTANTE: Atualize esta URL para seu domínio na Hostinger após o deploy
-// Exemplo: const API_BASE_URL = 'https://seudominio.com/api';
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://valedofimdeano.online/backend/api';
 
 // Token management
 let authToken: string | null = localStorage.getItem('auth_token');
