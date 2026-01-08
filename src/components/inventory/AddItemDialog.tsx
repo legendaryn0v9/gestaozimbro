@@ -8,14 +8,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAddItem, SectorType, UnitType } from '@/hooks/useInventory';
 import { Package, Plus, ImagePlus, X } from 'lucide-react';
 
+type CategoryType = 'destilados' | 'naoAlcoolicos' | 'alcoolicos';
+
 interface AddItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultSector?: SectorType;
   defaultCategory?: string;
+  categoryType?: CategoryType;
 }
 
-const BAR_CATEGORIES = [
+const DESTILADOS_CATEGORIES = [
   'Destilados',
   'Vodka',
   'Gin',
@@ -23,6 +26,20 @@ const BAR_CATEGORIES = [
   'Rum',
   'Tequila',
   'Cognac',
+];
+
+const NAO_ALCOOLICOS_CATEGORIES = [
+  'Refrigerante',
+  'Energético',
+  'Cerveja Zero',
+  'Água com Gás',
+  'Água sem Gás',
+];
+
+const ALCOOLICOS_CATEGORIES = [
+  'Cerveja',
+  'Vinho',
+  'Licor',
 ];
 
 const COZINHA_CATEGORIES = [
@@ -37,7 +54,7 @@ const COZINHA_CATEGORIES = [
   'Congelados',
 ];
 
-export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCategory }: AddItemDialogProps) {
+export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCategory, categoryType }: AddItemDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sector, setSector] = useState<SectorType>(defaultSector || 'bar');
@@ -52,7 +69,19 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
 
   const addItem = useAddItem();
 
-  const categories = sector === 'bar' ? BAR_CATEGORIES : COZINHA_CATEGORIES;
+  const getBarCategories = () => {
+    switch (categoryType) {
+      case 'naoAlcoolicos':
+        return NAO_ALCOOLICOS_CATEGORIES;
+      case 'alcoolicos':
+        return ALCOOLICOS_CATEGORIES;
+      case 'destilados':
+      default:
+        return DESTILADOS_CATEGORIES;
+    }
+  };
+
+  const categories = sector === 'bar' ? getBarCategories() : COZINHA_CATEGORIES;
 
   const handleSectorChange = (newSector: SectorType) => {
     setSector(newSector);
@@ -137,7 +166,9 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Package className="w-4 h-4 text-primary" />
             </div>
-            Lançamento de Bebidas
+            {categoryType === 'naoAlcoolicos' ? 'Lançamento de Não Alcoólicos' : 
+             categoryType === 'alcoolicos' ? 'Lançamento de Alcoólicos' : 
+             'Lançamento de Bebidas'}
           </DialogTitle>
         </DialogHeader>
 

@@ -39,6 +39,7 @@ export default function Bar() {
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogCategory, setAddDialogCategory] = useState<string | undefined>();
+  const [addDialogCategoryType, setAddDialogCategoryType] = useState<'destilados' | 'naoAlcoolicos' | 'alcoolicos'>('destilados');
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
@@ -48,8 +49,9 @@ export default function Bar() {
     Alcoólicos: 'Todos',
   });
 
-  const openAddDialog = (category?: string) => {
+  const openAddDialog = (category?: string, categoryType: 'destilados' | 'naoAlcoolicos' | 'alcoolicos' = 'destilados') => {
     setAddDialogCategory(category);
+    setAddDialogCategoryType(categoryType);
     setAddDialogOpen(true);
   };
 
@@ -57,6 +59,7 @@ export default function Bar() {
     setAddDialogOpen(open);
     if (!open) {
       setAddDialogCategory(undefined);
+      setAddDialogCategoryType('destilados');
     }
   };
 
@@ -211,7 +214,11 @@ export default function Bar() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openAddDialog(selectedSub !== 'Todos' ? selectedSub : category.name)}
+                      onClick={() => {
+                        const catType = category.name === 'Não Alcoólicos' ? 'naoAlcoolicos' : 
+                                        category.name === 'Alcoólicos' ? 'alcoolicos' : 'destilados';
+                        openAddDialog(selectedSub !== 'Todos' ? selectedSub : undefined, catType);
+                      }}
                       className="text-primary border-primary hover:bg-primary/10"
                     >
                       <Plus className="w-4 h-4 mr-1" />
@@ -282,7 +289,7 @@ export default function Bar() {
           </div>
         )}
 
-        <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" defaultCategory={addDialogCategory} />
+        <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" defaultCategory={addDialogCategory} categoryType={addDialogCategoryType} />
 
         <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" />
 
