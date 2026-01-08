@@ -78,6 +78,29 @@ export function useStockMovements(date?: string) {
   });
 }
 
+export function useMovementDates() {
+  return useQuery({
+    queryKey: ['movement-dates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select('created_at')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Extract unique dates
+      const dates = new Set<string>();
+      data?.forEach(m => {
+        const date = m.created_at.split('T')[0];
+        dates.add(date);
+      });
+      
+      return Array.from(dates);
+    },
+  });
+}
+
 export function useAddItem() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
