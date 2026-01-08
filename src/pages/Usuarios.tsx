@@ -3,9 +3,11 @@ import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, AppRole } from '@/
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Shield, UserCheck, Crown } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
+import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
 
 export default function Usuarios() {
   const { user } = useAuth();
@@ -31,6 +33,10 @@ export default function Usuarios() {
     updateRole.mutate({ userId, newRole });
   };
 
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
@@ -41,7 +47,7 @@ export default function Usuarios() {
             </div>
             <div>
               <h1 className="text-3xl font-display font-bold text-gradient">Gerenciar Usuários</h1>
-              <p className="text-muted-foreground">Gerencie os cargos dos funcionários</p>
+              <p className="text-muted-foreground">Gerencie os cargos e fotos dos funcionários</p>
             </div>
           </div>
           <CreateEmployeeDialog />
@@ -71,16 +77,28 @@ export default function Usuarios() {
                   className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      u.role === 'admin' 
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-600' 
-                        : 'bg-gradient-to-br from-blue-500 to-cyan-600'
-                    }`}>
-                      {u.role === 'admin' ? (
-                        <Crown className="w-5 h-5 text-white" />
-                      ) : (
-                        <UserCheck className="w-5 h-5 text-white" />
-                      )}
+                    <div className="relative">
+                      <Avatar className={`h-12 w-12 border-2 ${
+                        u.role === 'admin' 
+                          ? 'border-amber-500/50' 
+                          : 'border-blue-500/50'
+                      }`}>
+                        <AvatarImage src={u.avatar_url || undefined} alt={u.full_name} />
+                        <AvatarFallback className={
+                          u.role === 'admin' 
+                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white' 
+                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-white'
+                        }>
+                          {getInitials(u.full_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-1">
+                        <EditAvatarDialog 
+                          userId={u.id} 
+                          userName={u.full_name} 
+                          currentAvatarUrl={u.avatar_url} 
+                        />
+                      </div>
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{u.full_name}</p>

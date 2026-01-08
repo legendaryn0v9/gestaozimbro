@@ -16,6 +16,7 @@ export interface UserWithRole {
   id: string;
   email: string;
   full_name: string;
+  avatar_url: string | null;
   role: AppRole;
   role_id: string;
 }
@@ -55,7 +56,7 @@ export function useAllUsersWithRoles() {
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, full_name');
+        .select('id, email, full_name, avatar_url');
 
       if (profilesError) throw profilesError;
 
@@ -71,6 +72,7 @@ export function useAllUsersWithRoles() {
         id: profile.id,
         email: profile.email,
         full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
         role: rolesMap.get(profile.id)?.role ?? 'funcionario',
         role_id: rolesMap.get(profile.id)?.id ?? '',
       })) as UserWithRole[];
