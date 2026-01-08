@@ -32,9 +32,22 @@ const BAR_CATEGORIES = [
 export default function Bar() {
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addDialogCategory, setAddDialogCategory] = useState<string | undefined>();
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
+
+  const openAddDialog = (category?: string) => {
+    setAddDialogCategory(category);
+    setAddDialogOpen(true);
+  };
+
+  const closeAddDialog = (open: boolean) => {
+    setAddDialogOpen(open);
+    if (!open) {
+      setAddDialogCategory(undefined);
+    }
+  };
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
 
@@ -45,7 +58,6 @@ export default function Bar() {
     BAR_CATEGORIES.forEach(cat => {
       grouped[cat.name] = items.filter(item => {
         if (!item.category) return false;
-        // Verifica se o item pertence à categoria ou subcategoria
         return item.category === cat.name || 
                item.category.startsWith(`${cat.name} - `) ||
                cat.subcategories.some(sub => 
@@ -55,7 +67,6 @@ export default function Bar() {
       });
     });
 
-    // Itens sem categoria ou com categorias personalizadas
     grouped['Outros'] = items.filter(item => {
       if (!item.category) return true;
       return !BAR_CATEGORIES.some(cat => 
@@ -71,7 +82,6 @@ export default function Bar() {
     return grouped;
   }, [items]);
 
-  // Filtrar por busca
   const filteredItemsByCategory = useMemo(() => {
     if (!search) return itemsByCategory;
     
@@ -127,7 +137,7 @@ export default function Bar() {
               Saída
             </Button>
             <Button
-              onClick={() => setAddDialogOpen(true)}
+              onClick={() => openAddDialog()}
               className="bg-gradient-amber text-primary-foreground hover:opacity-90"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -167,7 +177,7 @@ export default function Bar() {
               Adicione o primeiro item ao estoque do bar
             </p>
             <Button
-              onClick={() => setAddDialogOpen(true)}
+              onClick={() => openAddDialog()}
               className="bg-gradient-amber text-primary-foreground hover:opacity-90"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -186,7 +196,7 @@ export default function Bar() {
                     <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient} flex items-center justify-center`}>
                       <Icon className="w-5 h-5 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h2 className="text-xl font-display font-semibold text-foreground">
                         {category.name}
                       </h2>
@@ -194,22 +204,22 @@ export default function Bar() {
                         {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'itens'}
                       </p>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openAddDialog(category.name)}
+                      className="text-primary border-primary hover:bg-primary/10"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Adicionar
+                    </Button>
                   </div>
                   
                   {categoryItems.length === 0 ? (
                     <div className="glass rounded-xl p-6 text-center border-dashed border-2 border-border">
-                      <p className="text-muted-foreground mb-3">
+                      <p className="text-muted-foreground">
                         Nenhum item em {category.name}
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAddDialogOpen(true)}
-                        className="text-primary border-primary hover:bg-primary/10"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Adicionar
-                      </Button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -226,14 +236,13 @@ export default function Bar() {
               );
             })}
 
-            {/* Itens sem categoria ou com categorias personalizadas */}
             {(filteredItemsByCategory['Outros']?.length ?? 0) > 0 && (
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
                     <Wine className="w-5 h-5 text-white" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h2 className="text-xl font-display font-semibold text-foreground">
                       Outros
                     </h2>
@@ -241,6 +250,15 @@ export default function Bar() {
                       {filteredItemsByCategory['Outros'].length} {filteredItemsByCategory['Outros'].length === 1 ? 'item' : 'itens'}
                     </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openAddDialog()}
+                    className="text-primary border-primary hover:bg-primary/10"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar
+                  </Button>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -271,8 +289,9 @@ export default function Bar() {
 
         <AddItemDialog
           open={addDialogOpen}
-          onOpenChange={setAddDialogOpen}
+          onOpenChange={closeAddDialog}
           defaultSector="bar"
+          defaultCategory={addDialogCategory}
         />
 
         <MovementDialog
