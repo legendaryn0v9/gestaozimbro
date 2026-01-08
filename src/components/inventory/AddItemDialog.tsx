@@ -24,7 +24,7 @@ const BAR_CATEGORIES = [
 ];
 
 const BAR_SUBCATEGORIES: Record<string, string[]> = {
-  'Destilados': ['Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
+  'Destilados': ['Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
   'Não Alcoólicos': ['Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
   'Alcoólicos': ['Cerveja', 'Vinho', 'Licor'],
 };
@@ -166,14 +166,16 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   };
 
   const getFinalCategory = () => {
-    if (defaultCategory) {
-      return defaultCategory;
-    }
     if (isCustomCategory && customCategory.trim()) {
       return customCategory.trim();
     }
+    // Se tem subcategoria selecionada, usar ela diretamente
     if (sector === 'bar' && subcategory) {
-      return `${category} - ${subcategory}`;
+      return subcategory;
+    }
+    // Se veio de defaultCategory (clicou em adicionar dentro de uma subcategoria)
+    if (defaultCategory) {
+      return defaultCategory;
     }
     return category || null;
   };
@@ -445,14 +447,14 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                 </div>
               )}
 
-              {sector === 'bar' && !isCustomCategory && !hideCategory && category && subcategories.length > 0 && (
+              {sector === 'bar' && !isCustomCategory && category && subcategories.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Subcategoria</Label>
+                  <Label>Tipo de {category}</Label>
                   <Select value={subcategory} onValueChange={setSubcategory}>
                     <SelectTrigger className="bg-input border-border">
                       <SelectValue placeholder="Selecione o tipo..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border-border z-50">
                       {subcategories.map((sub) => (
                         <SelectItem key={sub} value={sub}>
                           {sub}
