@@ -38,6 +38,7 @@ export interface StockMovement {
     name: string;
     sector: SectorType;
     unit: UnitType;
+    price: number;
   };
   profiles?: {
     full_name: string;
@@ -75,7 +76,7 @@ export function useStockMovements(date?: string) {
         .from('stock_movements')
         .select(`
           *,
-          inventory_items(name, sector, unit),
+          inventory_items(name, sector, unit, price),
           profiles(full_name)
         `)
         .order('created_at', { ascending: false })
