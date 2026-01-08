@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { usersApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,24 +28,23 @@ export function useCurrentUserRole() {
     queryFn: async () => {
       if (!user) return null;
       
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data as UserRole | null;
+      // The user object from PHP API already contains the role
+      return {
+        id: '',
+        user_id: user.id,
+        role: user.role || 'funcionario',
+        created_at: '',
+      } as UserRole;
     },
     enabled: !!user,
   });
 }
 
 export function useIsAdmin() {
-  const { data: role, isLoading } = useCurrentUserRole();
+  const { user } = useAuth();
   return {
-    isAdmin: role?.role === 'admin',
-    isLoading,
+    isAdmin: user?.role === 'admin',
+    isLoading: false,
   };
 }
 
@@ -53,28 +52,15 @@ export function useAllUsersWithRoles() {
   return useQuery({
     queryKey: ['all-users-roles'],
     queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name');
-      
-      if (profilesError) throw profilesError;
+      const users = await usersApi.list();
 
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-      
-      if (rolesError) throw rolesError;
-
-      const usersWithRoles: UserWithRole[] = profiles.map(profile => {
-        const userRole = roles.find(r => r.user_id === profile.id);
-        return {
-          id: profile.id,
-          email: profile.email,
-          full_name: profile.full_name,
-          role: (userRole?.role as AppRole) || 'funcionario',
-          role_id: userRole?.id || '',
-        };
-      });
+      const usersWithRoles: UserWithRole[] = users.map(user => ({
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: (user.role as AppRole) || 'funcionario',
+        role_id: '',
+      }));
 
       return usersWithRoles;
     },
@@ -87,29 +73,7 @@ export function useUpdateUserRole() {
 
   return useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      // Primeiro, verificar se já existe um role
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (existingRole) {
-        // Atualizar role existente
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role: newRole })
-          .eq('user_id', userId);
-        
-        if (error) throw error;
-      } else {
-        // Inserir novo role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: newRole });
-        
-        if (error) throw error;
-      }
+      await usersApi.updateRole(userId, newRole);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
