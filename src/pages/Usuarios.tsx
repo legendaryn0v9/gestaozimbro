@@ -1,11 +1,11 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, AppRole } from '@/hooks/useUserRoles';
 import { useAuth } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Shield, UserCheck, Crown } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 
 export default function Usuarios() {
   const { user } = useAuth();
@@ -34,14 +34,17 @@ export default function Usuarios() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-            <Users className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-display font-bold text-gradient">Gerenciar Usuários</h1>
+              <p className="text-muted-foreground">Gerencie os cargos dos funcionários</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-display font-bold text-gradient">Gerenciar Usuários</h1>
-            <p className="text-muted-foreground">Gerencie os cargos dos funcionários</p>
-          </div>
+          <CreateEmployeeDialog />
         </div>
 
         <div className="glass rounded-xl p-6">
