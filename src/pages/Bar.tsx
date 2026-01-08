@@ -75,16 +75,6 @@ export default function Bar() {
       });
     });
 
-    grouped.Outros = items.filter((item) => {
-      const n = normalizeCategory(item.category);
-      if (!n) return true;
-
-      return !BAR_CATEGORIES.some((cat) => {
-        const allowed = new Set(cat.subcategories.filter((s) => s !== 'Todos'));
-        return n === cat.name || allowed.has(n);
-      });
-    });
-
     return grouped;
   }, [items]);
 
@@ -281,37 +271,6 @@ export default function Bar() {
               );
             })}
 
-            {(filteredItemsByCategory.Outros?.length ?? 0) > 0 && (
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
-                    <Wine className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-display font-semibold text-foreground">Outros</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {filteredItemsByCategory.Outros.length}{' '}
-                      {filteredItemsByCategory.Outros.length === 1 ? 'item' : 'itens'}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openAddDialog()}
-                    className="text-primary border-primary hover:bg-primary/10"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredItemsByCategory.Outros.map((item) => (
-                    <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
-                  ))}
-                </div>
-              </section>
-            )}
 
             {search && totalFilteredItems === 0 && (
               <div className="text-center py-16">
