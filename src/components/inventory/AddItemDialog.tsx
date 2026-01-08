@@ -15,15 +15,16 @@ interface AddItemDialogProps {
 }
 
 const BAR_CATEGORIES = [
-  'Cervejas',
   'Destilados',
-  'Vinhos',
-  'Refrigerantes',
-  'Sucos',
-  'Águas',
-  'Energéticos',
-  'Outros',
+  'Não Alcoólicos',
+  'Alcoólicos',
 ];
+
+const BAR_SUBCATEGORIES: Record<string, string[]> = {
+  'Destilados': ['Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
+  'Não Alcoólicos': ['Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
+  'Alcoólicos': ['Cerveja', 'Vinho', 'Licor'],
+};
 
 const COZINHA_CATEGORIES = [
   'Carnes',
@@ -35,7 +36,6 @@ const COZINHA_CATEGORIES = [
   'Grãos',
   'Temperos',
   'Congelados',
-  'Outros',
 ];
 
 export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDialogProps) {
@@ -46,14 +46,31 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
   const [quantity, setQuantity] = useState('0');
   const [minQuantity, setMinQuantity] = useState('');
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
 
   const addItem = useAddItem();
 
   const categories = sector === 'bar' ? BAR_CATEGORIES : COZINHA_CATEGORIES;
+  const subcategories = sector === 'bar' && category ? BAR_SUBCATEGORIES[category] || [] : [];
 
   const handleSectorChange = (newSector: SectorType) => {
     setSector(newSector);
-    setCategory(''); // Reset category when sector changes
+    setCategory('');
+    setSubcategory('');
+    setCustomCategory('');
+    setIsCustomCategory(false);
+  };
+
+  const getFinalCategory = () => {
+    if (isCustomCategory && customCategory.trim()) {
+      return customCategory.trim();
+    }
+    if (sector === 'bar' && subcategory) {
+      return `${category} - ${subcategory}`;
+    }
+    return category || null;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,7 +84,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
         unit,
         quantity: Number(quantity),
         min_quantity: minQuantity ? Number(minQuantity) : null,
-        category: category || null,
+        category: getFinalCategory(),
       },
       {
         onSuccess: () => {
@@ -76,6 +93,9 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
           setQuantity('0');
           setMinQuantity('');
           setCategory('');
+          setSubcategory('');
+          setCustomCategory('');
+          setIsCustomCategory(false);
           onOpenChange(false);
         },
       }
@@ -134,21 +154,62 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
             </div>
 
             <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Label className="flex items-center justify-between">
+                <span>Categoria</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomCategory(!isCustomCategory);
+                    setCategory('');
+                    setSubcategory('');
+                    setCustomCategory('');
+                  }}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {isCustomCategory ? 'Usar existente' : 'Criar nova'}
+                </button>
+              </Label>
+              {isCustomCategory ? (
+                <Input
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="Nome da nova categoria..."
+                  className="bg-input border-border"
+                />
+              ) : (
+                <Select value={category} onValueChange={(v) => { setCategory(v); setSubcategory(''); }}>
+                  <SelectTrigger className="bg-input border-border">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+
+          {sector === 'bar' && !isCustomCategory && category && subcategories.length > 0 && (
+            <div className="space-y-2">
+              <Label>Subcategoria</Label>
+              <Select value={subcategory} onValueChange={setSubcategory}>
                 <SelectTrigger className="bg-input border-border">
-                  <SelectValue placeholder="Selecione..." />
+                  <SelectValue placeholder="Selecione o tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {subcategories.map((sub) => (
+                    <SelectItem key={sub} value={sub}>
+                      {sub}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
