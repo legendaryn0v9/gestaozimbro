@@ -167,15 +167,15 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     if (isCustomCategory && customCategory.trim()) {
       return customCategory.trim();
     }
-    // Se tem subcategoria selecionada, usar ela diretamente
-    if (sector === 'bar' && subcategory) {
-      return subcategory;
+    // Usar a categoria selecionada diretamente
+    if (category) {
+      return category;
     }
     // Se veio de defaultCategory (clicou em adicionar dentro de uma subcategoria)
     if (defaultCategory) {
       return defaultCategory;
     }
-    return category || null;
+    return null;
   };
 
   const resetForm = () => {
