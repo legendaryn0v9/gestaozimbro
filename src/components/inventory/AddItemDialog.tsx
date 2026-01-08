@@ -14,6 +14,30 @@ interface AddItemDialogProps {
   defaultSector?: SectorType;
 }
 
+const BAR_CATEGORIES = [
+  'Cervejas',
+  'Destilados',
+  'Vinhos',
+  'Refrigerantes',
+  'Sucos',
+  'Águas',
+  'Energéticos',
+  'Outros',
+];
+
+const COZINHA_CATEGORIES = [
+  'Carnes',
+  'Aves',
+  'Peixes',
+  'Vegetais',
+  'Frutas',
+  'Laticínios',
+  'Grãos',
+  'Temperos',
+  'Congelados',
+  'Outros',
+];
+
 export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -21,8 +45,16 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
   const [unit, setUnit] = useState<UnitType>('unidade');
   const [quantity, setQuantity] = useState('0');
   const [minQuantity, setMinQuantity] = useState('');
+  const [category, setCategory] = useState('');
 
   const addItem = useAddItem();
+
+  const categories = sector === 'bar' ? BAR_CATEGORIES : COZINHA_CATEGORIES;
+
+  const handleSectorChange = (newSector: SectorType) => {
+    setSector(newSector);
+    setCategory(''); // Reset category when sector changes
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +67,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
         unit,
         quantity: Number(quantity),
         min_quantity: minQuantity ? Number(minQuantity) : null,
+        category: category || null,
       },
       {
         onSuccess: () => {
@@ -42,6 +75,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
           setDescription('');
           setQuantity('0');
           setMinQuantity('');
+          setCategory('');
           onOpenChange(false);
         },
       }
@@ -88,7 +122,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Setor</Label>
-              <Select value={sector} onValueChange={(v) => setSector(v as SectorType)}>
+              <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue />
                 </SelectTrigger>
@@ -99,6 +133,24 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Unidade</Label>
               <Select value={unit} onValueChange={(v) => setUnit(v as UnitType)}>
@@ -114,9 +166,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantidade Inicial</Label>
               <Input
@@ -129,20 +179,20 @@ export function AddItemDialog({ open, onOpenChange, defaultSector }: AddItemDial
                 className="bg-input border-border"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="minQuantity">Qtd. Mínima</Label>
-              <Input
-                id="minQuantity"
-                type="number"
-                min="0"
-                step="0.01"
-                value={minQuantity}
-                onChange={(e) => setMinQuantity(e.target.value)}
-                placeholder="Alerta"
-                className="bg-input border-border"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="minQuantity">Quantidade Mínima (Alerta)</Label>
+            <Input
+              id="minQuantity"
+              type="number"
+              min="0"
+              step="0.01"
+              value={minQuantity}
+              onChange={(e) => setMinQuantity(e.target.value)}
+              placeholder="Quantidade para alerta de estoque baixo"
+              className="bg-input border-border"
+            />
           </div>
 
           <Button

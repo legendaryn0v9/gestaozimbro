@@ -47,9 +47,16 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         )}
       </div>
 
-      <h3 className="font-semibold text-foreground truncate">{item.name}</h3>
+      <div className="flex items-center gap-2 mb-1">
+        <h3 className="font-semibold text-foreground truncate">{item.name}</h3>
+      </div>
+      {item.category && (
+        <span className="inline-block px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium mb-1">
+          {item.category}
+        </span>
+      )}
       {item.description && (
-        <p className="text-muted-foreground text-sm truncate mt-1">{item.description}</p>
+        <p className="text-muted-foreground text-sm truncate">{item.description}</p>
       )}
 
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
