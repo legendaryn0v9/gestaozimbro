@@ -4,6 +4,7 @@ import { ItemCard } from '@/components/inventory/ItemCard';
 import { AddItemDialog } from '@/components/inventory/AddItemDialog';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
+import { useIsAdmin } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini, DollarSign } from 'lucide-react';
@@ -64,6 +65,7 @@ export default function Bar() {
   };
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
+  const { isAdmin } = useIsAdmin();
 
   // Agrupar itens por categoria principal (Destilados / Não Alcoólicos / Alcoólicos)
   const itemsByCategory = useMemo(() => {
@@ -174,15 +176,17 @@ export default function Bar() {
               <span className="hidden xs:inline">Saída</span>
               <span className="xs:hidden">-</span>
             </Button>
-            <Button 
-              onClick={() => openAddDialog()} 
-              size="sm"
-              className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
-            >
-              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Novo Item</span>
-              <span className="xs:hidden">Novo</span>
-            </Button>
+            {isAdmin && (
+              <Button 
+                onClick={() => openAddDialog()} 
+                size="sm"
+                className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
+              >
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Novo Item</span>
+                <span className="xs:hidden">Novo</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -215,10 +219,12 @@ export default function Bar() {
             <Wine className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Estoque vazio</h3>
             <p className="text-muted-foreground mb-6">Adicione o primeiro item ao estoque do bar</p>
-            <Button onClick={() => openAddDialog()} className="bg-gradient-amber text-primary-foreground hover:opacity-90">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Item
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => openAddDialog()} className="bg-gradient-amber text-primary-foreground hover:opacity-90">
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Item
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-10">
@@ -241,19 +247,21 @@ export default function Bar() {
                         {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'itens'}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const catType = category.name === 'Não Alcoólicos' ? 'naoAlcoolicos' : 
-                                        category.name === 'Alcoólicos' ? 'alcoolicos' : 'destilados';
-                        openAddDialog(selectedSub !== 'Todos' ? selectedSub : undefined, catType);
-                      }}
-                      className="text-primary border-primary hover:bg-primary/10"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Adicionar
-                    </Button>
+                    {isAdmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const catType = category.name === 'Não Alcoólicos' ? 'naoAlcoolicos' : 
+                                          category.name === 'Alcoólicos' ? 'alcoolicos' : 'destilados';
+                          openAddDialog(selectedSub !== 'Todos' ? selectedSub : undefined, catType);
+                        }}
+                        className="text-primary border-primary hover:bg-primary/10"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    )}
                   </div>
 
                   {/* Subcategory tabs - horizontal scroll on mobile */}

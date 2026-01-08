@@ -4,6 +4,7 @@ import { ItemCard } from '@/components/inventory/ItemCard';
 import { AddItemDialog } from '@/components/inventory/AddItemDialog';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
+import { useIsAdmin } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +32,7 @@ export default function Cozinha() {
   const [selectedItemId, setSelectedItemId] = useState<string>();
 
   const { data: items = [], isLoading } = useInventoryItems('cozinha');
+  const { isAdmin } = useIsAdmin();
 
   const categories = useMemo(() => {
     const cats = items.map(item => item.category).filter(Boolean) as string[];
@@ -84,15 +86,17 @@ export default function Cozinha() {
               <span className="hidden xs:inline">Saída</span>
               <span className="xs:hidden">-</span>
             </Button>
-            <Button
-              onClick={() => setAddDialogOpen(true)}
-              size="sm"
-              className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
-            >
-              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Novo Item</span>
-              <span className="xs:hidden">Novo</span>
-            </Button>
+            {isAdmin && (
+              <Button
+                onClick={() => setAddDialogOpen(true)}
+                size="sm"
+                className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
+              >
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Novo Item</span>
+                <span className="xs:hidden">Novo</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -138,7 +142,7 @@ export default function Cozinha() {
             <p className="text-sm text-muted-foreground mb-6">
               {search || categoryFilter !== 'all' ? 'Tente buscar por outro termo ou categoria' : 'Adicione o primeiro item ao estoque da cozinha'}
             </p>
-            {!search && categoryFilter === 'all' && (
+            {!search && categoryFilter === 'all' && isAdmin && (
               <Button
                 onClick={() => setAddDialogOpen(true)}
                 size="sm"
