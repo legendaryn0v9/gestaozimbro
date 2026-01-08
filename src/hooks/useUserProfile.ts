@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UserProfile {
@@ -12,18 +11,16 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export function useCurrentUserProfile() {
-  const { user } = useAuth();
-
+export function useCurrentUserProfile(userId: string | undefined) {
   return useQuery({
-    queryKey: ['user-profile', user?.id],
+    queryKey: ['user-profile', userId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!userId) return null;
 
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -33,7 +30,7 @@ export function useCurrentUserProfile() {
 
       return data as UserProfile;
     },
-    enabled: !!user?.id,
+    enabled: !!userId,
   });
 }
 

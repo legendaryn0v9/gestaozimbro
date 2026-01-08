@@ -40,7 +40,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { data: profile } = useCurrentUserProfile();
+  const { data: profile } = useCurrentUserProfile(user?.id);
 
   const handleClick = () => {
     onNavigate?.();
