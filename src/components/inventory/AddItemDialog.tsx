@@ -382,18 +382,24 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 items-end">
                 <div className="space-y-2">
                   <Label>Setor</Label>
-                  <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
-                    <SelectTrigger className="bg-input border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bar">Bar</SelectItem>
-                      <SelectItem value="cozinha">Cozinha</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {defaultSector ? (
+                    <div className="h-10 px-3 py-2 bg-muted rounded-md border border-border flex items-center">
+                      {sector === 'bar' ? 'Bar' : 'Cozinha'}
+                    </div>
+                  ) : (
+                    <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
+                      <SelectTrigger className="bg-input border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border z-50">
+                        <SelectItem value="bar">Bar</SelectItem>
+                        <SelectItem value="cozinha">Cozinha</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -424,7 +430,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                       <SelectTrigger className="bg-input border-border">
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-popover border-border z-50">
                         {categories.map((cat) => (
                           <SelectItem key={cat} value={cat}>
                             {cat}
