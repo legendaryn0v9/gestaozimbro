@@ -64,15 +64,17 @@ export function useInventoryItems(sector?: SectorType) {
 }
 
 export function useStockMovements(date?: string) {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['stock-movements', date],
+    queryKey: ['stock-movements', date, user?.id],
     queryFn: async () => {
       let query = supabase
         .from('stock_movements')
         .select(`
           *,
-          inventory_items!inner(name, sector, unit),
-          profiles!inner(full_name)
+          inventory_items(name, sector, unit),
+          profiles(full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -106,12 +108,15 @@ export function useStockMovements(date?: string) {
         profiles: movement.profiles as any,
       })) as StockMovement[];
     },
+    enabled: !!user,
   });
 }
 
 export function useMovementDates() {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['movement-dates'],
+    queryKey: ['movement-dates', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stock_movements')
@@ -126,6 +131,7 @@ export function useMovementDates() {
 
       return uniqueDates;
     },
+    enabled: !!user,
   });
 }
 
@@ -136,8 +142,10 @@ export interface EmployeeRanking {
 }
 
 export function useEmployeeRanking() {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['employee-ranking'],
+    queryKey: ['employee-ranking', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stock_movements')
@@ -145,7 +153,7 @@ export function useEmployeeRanking() {
           user_id,
           quantity,
           movement_type,
-          profiles!inner(full_name)
+          profiles(full_name)
         `)
         .eq('movement_type', 'saida');
 
@@ -170,6 +178,7 @@ export function useEmployeeRanking() {
         .sort((a, b) => b.total_saidas - a.total_saidas)
         .slice(0, 5);
     },
+    enabled: !!user,
   });
 }
 
