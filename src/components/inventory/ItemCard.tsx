@@ -100,43 +100,35 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
           </div>
         )}
 
-        {item.image_url ? (
-          <div className="relative w-full h-28 mb-3 rounded-lg overflow-hidden">
+        {/* Image or Icon */}
+        <div className="relative w-full aspect-square mb-3 rounded-xl overflow-hidden bg-gradient-to-br from-muted/50 to-muted/30 flex items-center justify-center">
+          {item.image_url ? (
             <img 
               src={item.image_url} 
               alt={item.name} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-2"
             />
-            {(isLowStock || isOutOfStock) && (
-              <div className={cn(
-                'absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1',
-                isOutOfStock ? 'bg-destructive/90 text-white' : 'bg-warning/90 text-white'
-              )}>
-                <AlertTriangle className="w-3 h-3" />
-                {isOutOfStock ? 'Esgotado' : 'Baixo'}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-start justify-between mb-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+          ) : (
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
               {item.sector === 'bar' ? (
-                <Wine className="w-6 h-6 text-primary" />
+                <Wine className="w-8 h-8 text-primary" />
               ) : (
-                <UtensilsCrossed className="w-6 h-6 text-primary" />
+                <UtensilsCrossed className="w-8 h-8 text-primary" />
               )}
             </div>
-            {(isLowStock || isOutOfStock) && (
-              <div className={cn(
-                'px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1',
-                isOutOfStock ? 'bg-destructive/20 text-destructive' : 'bg-warning/20 text-warning'
-              )}>
-                <AlertTriangle className="w-3 h-3" />
-                {isOutOfStock ? 'Esgotado' : 'Baixo'}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+          
+          {/* Stock Badge */}
+          {(isLowStock || isOutOfStock) && (
+            <div className={cn(
+              'absolute top-2 left-2 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 shadow-sm',
+              isOutOfStock ? 'bg-destructive text-destructive-foreground' : 'bg-warning text-white'
+            )}>
+              <AlertTriangle className="w-3 h-3" />
+              {isOutOfStock ? 'Esgotado' : 'Baixo'}
+            </div>
+          )}
+        </div>
 
         <div className="space-y-1">
           <h3 className="font-semibold text-foreground truncate text-base">{item.name}</h3>
