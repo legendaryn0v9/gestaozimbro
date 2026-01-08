@@ -272,3 +272,63 @@ export function useAddMovement() {
     },
   });
 }
+
+export function useCancelMovement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (movement: StockMovement) => {
+      // First, reverse the quantity change
+      const { data: item, error: itemError } = await supabase
+        .from('inventory_items')
+        .select('quantity')
+        .eq('id', movement.item_id)
+        .single();
+
+      if (itemError) throw itemError;
+
+      const currentQty = Number(item.quantity);
+      // Reverse the movement: if it was entrada, subtract; if saida, add back
+      const newQuantity = movement.movement_type === 'entrada'
+        ? currentQty - Number(movement.quantity)
+        : currentQty + Number(movement.quantity);
+
+      if (newQuantity < 0) {
+        throw new Error('Não é possível cancelar: resultaria em estoque negativo');
+      }
+
+      // Update item quantity
+      const { error: updateError } = await supabase
+        .from('inventory_items')
+        .update({ quantity: newQuantity })
+        .eq('id', movement.item_id);
+
+      if (updateError) throw updateError;
+
+      // Delete the movement
+      const { error: deleteError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .eq('id', movement.id);
+
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['movement-dates'] });
+      toast({
+        title: 'Movimentação cancelada!',
+        description: 'A movimentação foi revertida com sucesso.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro ao cancelar movimentação',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
