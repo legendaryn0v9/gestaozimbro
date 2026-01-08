@@ -28,24 +28,43 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
         isLowStock && !isOutOfStock && 'border-warning/50'
       )}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          {item.sector === 'bar' ? (
-            <Wine className="w-5 h-5 text-primary" />
-          ) : (
-            <UtensilsCrossed className="w-5 h-5 text-primary" />
+      {item.image_url ? (
+        <div className="relative w-full h-24 mb-3 rounded-lg overflow-hidden">
+          <img 
+            src={item.image_url} 
+            alt={item.name} 
+            className="w-full h-full object-cover"
+          />
+          {(isLowStock || isOutOfStock) && (
+            <div className={cn(
+              'absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1',
+              isOutOfStock ? 'bg-destructive/90 text-white' : 'bg-warning/90 text-white'
+            )}>
+              <AlertTriangle className="w-3 h-3" />
+              {isOutOfStock ? 'Esgotado' : 'Baixo'}
+            </div>
           )}
         </div>
-        {(isLowStock || isOutOfStock) && (
-          <div className={cn(
-            'px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1',
-            isOutOfStock ? 'bg-destructive/20 text-destructive' : 'bg-warning/20 text-warning'
-          )}>
-            <AlertTriangle className="w-3 h-3" />
-            {isOutOfStock ? 'Esgotado' : 'Baixo'}
+      ) : (
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            {item.sector === 'bar' ? (
+              <Wine className="w-5 h-5 text-primary" />
+            ) : (
+              <UtensilsCrossed className="w-5 h-5 text-primary" />
+            )}
           </div>
-        )}
-      </div>
+          {(isLowStock || isOutOfStock) && (
+            <div className={cn(
+              'px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1',
+              isOutOfStock ? 'bg-destructive/20 text-destructive' : 'bg-warning/20 text-warning'
+            )}>
+              <AlertTriangle className="w-3 h-3" />
+              {isOutOfStock ? 'Esgotado' : 'Baixo'}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mb-1">
         <h3 className="font-semibold text-foreground truncate">{item.name}</h3>

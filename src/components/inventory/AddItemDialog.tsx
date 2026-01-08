@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddItem, SectorType, UnitType } from '@/hooks/useInventory';
-import { Package, Plus } from 'lucide-react';
+import { Package, Plus, ImagePlus, X } from 'lucide-react';
 
 interface AddItemDialogProps {
   open: boolean;
@@ -50,6 +50,8 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const [subcategory, setSubcategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addItem = useAddItem();
 
@@ -65,7 +67,29 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     setIsCustomCategory(false);
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const getFinalCategory = () => {
+    // Se temos defaultCategory, usar diretamente
+    if (defaultCategory) {
+      return defaultCategory;
+    }
     if (isCustomCategory && customCategory.trim()) {
       return customCategory.trim();
     }
@@ -87,6 +111,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
         quantity: Number(quantity),
         min_quantity: minQuantity ? Number(minQuantity) : null,
         category: getFinalCategory(),
+        image_url: imagePreview,
       },
       {
         onSuccess: () => {
@@ -98,6 +123,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
           setSubcategory('');
           setCustomCategory('');
           setIsCustomCategory(false);
+          setImagePreview(null);
           onOpenChange(false);
         },
       }
@@ -265,6 +291,45 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
               placeholder="Quantidade para alerta de estoque baixo"
               className="bg-input border-border"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Foto do Produto (opcional)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            {imagePreview ? (
+              <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 w-6 h-6 bg-destructive rounded-full flex items-center justify-center hover:bg-destructive/80"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-20 border-dashed border-2 hover:bg-muted/50"
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <ImagePlus className="w-6 h-6 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Adicionar foto</span>
+                </div>
+              </Button>
+            )}
           </div>
 
           <Button
