@@ -384,68 +384,59 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                 />
               </div>
 
-              {hideCategory ? (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Setor</Label>
-                  <div className="h-10 px-3 py-2 bg-muted rounded-md border border-border flex items-center text-muted-foreground">
-                    {sector === 'bar' ? 'Bar' : 'Cozinha'} - {defaultCategory}
-                  </div>
+                  <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
+                    <SelectTrigger className="bg-input border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bar">Bar</SelectItem>
+                      <SelectItem value="cozinha">Cozinha</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Setor</Label>
-                    <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center justify-between">
+                    <span>Categoria</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCategory(!isCustomCategory);
+                        setCategory('');
+                        setSubcategory('');
+                        setCustomCategory('');
+                      }}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {isCustomCategory ? 'Usar existente' : 'Criar nova'}
+                    </button>
+                  </Label>
+                  {isCustomCategory ? (
+                    <Input
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      placeholder="Nome da nova categoria..."
+                      className="bg-input border-border"
+                    />
+                  ) : (
+                    <Select value={category} onValueChange={(v) => { setCategory(v); setSubcategory(''); }}>
                       <SelectTrigger className="bg-input border-border">
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bar">Bar</SelectItem>
-                        <SelectItem value="cozinha">Cozinha</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="flex items-center justify-between">
-                      <span>Categoria</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCustomCategory(!isCustomCategory);
-                          setCategory('');
-                          setSubcategory('');
-                          setCustomCategory('');
-                        }}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        {isCustomCategory ? 'Usar existente' : 'Criar nova'}
-                      </button>
-                    </Label>
-                    {isCustomCategory ? (
-                      <Input
-                        value={customCategory}
-                        onChange={(e) => setCustomCategory(e.target.value)}
-                        placeholder="Nome da nova categoria..."
-                        className="bg-input border-border"
-                      />
-                    ) : (
-                      <Select value={category} onValueChange={(v) => { setCategory(v); setSubcategory(''); }}>
-                        <SelectTrigger className="bg-input border-border">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>
-                              {cat}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {sector === 'bar' && !isCustomCategory && category && subcategories.length > 0 && (
                 <div className="space-y-2">
