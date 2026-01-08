@@ -1,8 +1,21 @@
-import { StockMovement } from '@/hooks/useInventory';
+import { StockMovement, useCancelMovement } from '@/hooks/useInventory';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingUp, TrendingDown, User } from 'lucide-react';
+import { TrendingUp, TrendingDown, User, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsAdmin } from '@/hooks/useUserRoles';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface MovementListProps {
   movements: StockMovement[];
@@ -10,6 +23,9 @@ interface MovementListProps {
 }
 
 export function MovementList({ movements, showDate = true }: MovementListProps) {
+  const { isAdmin } = useIsAdmin();
+  const cancelMovement = useCancelMovement();
+
   if (movements.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -17,6 +33,10 @@ export function MovementList({ movements, showDate = true }: MovementListProps) 
       </div>
     );
   }
+
+  const handleCancel = (movement: StockMovement) => {
+    cancelMovement.mutate(movement);
+  };
 
   return (
     <div className="space-y-3">
@@ -45,12 +65,61 @@ export function MovementList({ movements, showDate = true }: MovementListProps) 
                   <h4 className="font-semibold text-foreground truncate">
                     {movement.inventory_items?.name}
                   </h4>
-                  <span className={cn(
-                    'font-bold whitespace-nowrap',
-                    isEntrada ? 'text-success' : 'text-destructive'
-                  )}>
-                    {isEntrada ? '+' : '-'}{movement.quantity} {movement.inventory_items?.unit}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'font-bold whitespace-nowrap',
+                      isEntrada ? 'text-success' : 'text-destructive'
+                    )}>
+                      {isEntrada ? '+' : '-'}{movement.quantity} {movement.inventory_items?.unit}
+                    </span>
+                    
+                    {isAdmin && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            disabled={cancelMovement.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancelar Movimentação</AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-2">
+                              <p>Tem certeza que deseja cancelar esta movimentação?</p>
+                              <div className="bg-muted rounded-lg p-3 mt-2">
+                                <p className="font-medium">{movement.inventory_items?.name}</p>
+                                <p className={cn(
+                                  'text-sm',
+                                  isEntrada ? 'text-success' : 'text-destructive'
+                                )}>
+                                  {isEntrada ? 'Entrada' : 'Saída'}: {movement.quantity} {movement.inventory_items?.unit}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Por: {movement.profiles?.full_name}
+                                </p>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Esta ação irá reverter a quantidade no estoque.
+                              </p>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Não, manter</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleCancel(movement)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Sim, cancelar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
 
                 {movement.notes && (
