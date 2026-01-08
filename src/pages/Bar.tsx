@@ -7,56 +7,33 @@ import { useInventoryItems } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini } from 'lucide-react';
-
-const SPIRIT_CATEGORIES = new Set(['Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac']);
+import { cn } from '@/lib/utils';
 
 const BAR_CATEGORIES = [
   {
     name: 'Destilados',
     icon: Martini,
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Vodka',
-    icon: Martini,
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Gin',
-    icon: Martini,
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Whisky',
-    icon: Martini,
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Rum',
-    icon: Martini,
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Tequila',
-    icon: Martini,
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Cognac',
-    icon: Martini,
+    subcategories: ['Todos', 'Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
     gradient: 'from-amber-500 to-orange-600',
   },
   {
     name: 'Não Alcoólicos',
     icon: GlassWater,
+    subcategories: ['Todos', 'Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
     gradient: 'from-blue-500 to-cyan-600',
   },
   {
     name: 'Alcoólicos',
     icon: Beer,
+    subcategories: ['Todos', 'Cerveja', 'Vinho', 'Licor'],
     gradient: 'from-purple-500 to-pink-600',
   },
 ];
+
+const normalizeCategory = (category: string | null) => {
+  if (!category) return null;
+  return category.split(' - ').pop()?.trim() || category;
+};
 
 export default function Bar() {
   const [search, setSearch] = useState('');
@@ -65,6 +42,11 @@ export default function Bar() {
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
+  const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string>>({
+    Destilados: 'Todos',
+    'Não Alcoólicos': 'Todos',
+    Alcoólicos: 'Todos',
+  });
 
   const openAddDialog = (category?: string) => {
     setAddDialogCategory(category);
@@ -80,46 +62,43 @@ export default function Bar() {
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
 
-  const getBarBucket = (category: string | null) => {
-    if (!category) return null;
-
-    const lastPart = category.split(' - ').pop()?.trim() || category;
-
-    // Antigo formato: "Destilados - Vodka" -> Vodka
-    if (SPIRIT_CATEGORIES.has(lastPart)) return lastPart;
-
-    // Categoria principal
-    if (category === 'Destilados') return 'Destilados';
-    if (category === 'Não Alcoólicos') return 'Não Alcoólicos';
-    if (category === 'Alcoólicos') return 'Alcoólicos';
-
-    return null;
-  };
-
-  // Agrupar itens por categoria (cada uma no seu lugar)
+  // Agrupar itens por categoria principal (Destilados / Não Alcoólicos / Alcoólicos)
   const itemsByCategory = useMemo(() => {
     const grouped: Record<string, typeof items> = {};
 
     BAR_CATEGORIES.forEach((cat) => {
-      grouped[cat.name] = [];
+      const allowed = new Set(cat.subcategories.filter((s) => s !== 'Todos'));
+      grouped[cat.name] = items.filter((item) => {
+        const n = normalizeCategory(item.category);
+        if (!n) return false;
+        return n === cat.name || allowed.has(n);
+      });
     });
-    grouped['Outros'] = [];
 
-    items.forEach((item) => {
-      const bucket = getBarBucket(item.category);
-      const key = bucket ?? 'Outros';
-      (grouped[key] ?? grouped['Outros']).push(item);
+    grouped.Outros = items.filter((item) => {
+      const n = normalizeCategory(item.category);
+      if (!n) return true;
+
+      return !BAR_CATEGORIES.some((cat) => {
+        const allowed = new Set(cat.subcategories.filter((s) => s !== 'Todos'));
+        return n === cat.name || allowed.has(n);
+      });
     });
 
     return grouped;
   }, [items]);
 
-  // Aplicar busca
+  // Filtrar por aba (subcategoria) + busca
   const filteredItemsByCategory = useMemo(() => {
     const filtered: Record<string, typeof items> = {};
 
     Object.entries(itemsByCategory).forEach(([cat, catItems]) => {
       let result = catItems;
+
+      const selectedSub = selectedSubcategories[cat];
+      if (selectedSub && selectedSub !== 'Todos') {
+        result = result.filter((item) => normalizeCategory(item.category) === selectedSub);
+      }
 
       if (search) {
         result = result.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
@@ -129,16 +108,21 @@ export default function Bar() {
     });
 
     return filtered;
-  }, [itemsByCategory, search]);
+  }, [itemsByCategory, selectedSubcategories, search]);
 
   const handleItemClick = (itemId: string) => {
     setSelectedItemId(itemId);
     setSaidaDialogOpen(true);
   };
 
-  const totalFilteredItems = Object.values(filteredItemsByCategory).reduce(
-    (acc, items) => acc + items.length, 0
-  );
+  const handleSubcategoryChange = (category: string, subcategory: string) => {
+    setSelectedSubcategories((prev) => ({
+      ...prev,
+      [category]: subcategory,
+    }));
+  };
+
+  const totalFilteredItems = Object.values(filteredItemsByCategory).reduce((acc, list) => acc + list.length, 0);
 
   return (
     <MainLayout>
@@ -173,10 +157,7 @@ export default function Bar() {
               <TrendingDown className="w-4 h-4 mr-2" />
               Saída
             </Button>
-            <Button
-              onClick={() => openAddDialog()}
-              className="bg-gradient-amber text-primary-foreground hover:opacity-90"
-            >
+            <Button onClick={() => openAddDialog()} className="bg-gradient-amber text-primary-foreground hover:opacity-90">
               <Plus className="w-4 h-4 mr-2" />
               Novo Item
             </Button>
@@ -210,13 +191,8 @@ export default function Bar() {
           <div className="text-center py-16">
             <Wine className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Estoque vazio</h3>
-            <p className="text-muted-foreground mb-6">
-              Adicione o primeiro item ao estoque do bar
-            </p>
-            <Button
-              onClick={() => openAddDialog()}
-              className="bg-gradient-amber text-primary-foreground hover:opacity-90"
-            >
+            <p className="text-muted-foreground mb-6">Adicione o primeiro item ao estoque do bar</p>
+            <Button onClick={() => openAddDialog()} className="bg-gradient-amber text-primary-foreground hover:opacity-90">
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Item
             </Button>
@@ -226,17 +202,18 @@ export default function Bar() {
             {BAR_CATEGORIES.map((category) => {
               const categoryItems = filteredItemsByCategory[category.name] || [];
               const Icon = category.icon;
-              
+              const selectedSub = selectedSubcategories[category.name] || 'Todos';
+
               return (
                 <section key={category.name} className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient} flex items-center justify-center`}>
+                    <div
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient} flex items-center justify-center`}
+                    >
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-display font-semibold text-foreground">
-                        {category.name}
-                      </h2>
+                      <h2 className="text-xl font-display font-semibold text-foreground">{category.name}</h2>
                       <p className="text-sm text-muted-foreground">
                         {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'itens'}
                       </p>
@@ -244,7 +221,7 @@ export default function Bar() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openAddDialog(category.name)}
+                      onClick={() => openAddDialog(selectedSub !== 'Todos' ? selectedSub : category.name)}
                       className="text-primary border-primary hover:bg-primary/10"
                     >
                       <Plus className="w-4 h-4 mr-1" />
@@ -252,18 +229,51 @@ export default function Bar() {
                     </Button>
                   </div>
 
+                  <div className="flex gap-2 flex-wrap">
+                    {category.subcategories.map((sub) => {
+                      const isSelected = selectedSub === sub;
+                      const subCount =
+                        sub === 'Todos'
+                          ? (itemsByCategory[category.name]?.length || 0)
+                          : (itemsByCategory[category.name] || []).filter(
+                              (item) => normalizeCategory(item.category) === sub
+                            ).length;
+
+                      return (
+                        <Button
+                          key={sub}
+                          variant={isSelected ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleSubcategoryChange(category.name, sub)}
+                          className={cn(
+                            'h-8 text-xs',
+                            isSelected ? `bg-gradient-to-r ${category.gradient} text-white border-0` : 'hover:bg-secondary'
+                          )}
+                        >
+                          {sub}
+                          <span
+                            className={cn(
+                              'ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]',
+                              isSelected ? 'bg-white/20' : 'bg-muted'
+                            )}
+                          >
+                            {subCount}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+
                   {categoryItems.length === 0 ? (
                     <div className="glass rounded-xl p-6 text-center border-dashed border-2 border-border">
-                      <p className="text-muted-foreground">Nenhum item em {category.name}</p>
+                      <p className="text-muted-foreground">
+                        {selectedSub !== 'Todos' ? `Nenhum item em ${selectedSub}` : `Nenhum item em ${category.name}`}
+                      </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {categoryItems.map((item) => (
-                        <ItemCard
-                          key={item.id}
-                          item={item}
-                          onClick={() => handleItemClick(item.id)}
-                        />
+                        <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
                       ))}
                     </div>
                   )}
@@ -271,18 +281,17 @@ export default function Bar() {
               );
             })}
 
-            {(filteredItemsByCategory['Outros']?.length ?? 0) > 0 && (
+            {(filteredItemsByCategory.Outros?.length ?? 0) > 0 && (
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
                     <Wine className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl font-display font-semibold text-foreground">
-                      Outros
-                    </h2>
+                    <h2 className="text-xl font-display font-semibold text-foreground">Outros</h2>
                     <p className="text-sm text-muted-foreground">
-                      {filteredItemsByCategory['Outros'].length} {filteredItemsByCategory['Outros'].length === 1 ? 'item' : 'itens'}
+                      {filteredItemsByCategory.Outros.length}{' '}
+                      {filteredItemsByCategory.Outros.length === 1 ? 'item' : 'itens'}
                     </p>
                   </div>
                   <Button
@@ -295,14 +304,10 @@ export default function Bar() {
                     Adicionar
                   </Button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredItemsByCategory['Outros'].map((item) => (
-                    <ItemCard
-                      key={item.id}
-                      item={item}
-                      onClick={() => handleItemClick(item.id)}
-                    />
+                  {filteredItemsByCategory.Outros.map((item) => (
+                    <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
                   ))}
                 </div>
               </section>
@@ -311,29 +316,16 @@ export default function Bar() {
             {search && totalFilteredItems === 0 && (
               <div className="text-center py-16">
                 <Search className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Nenhum item encontrado
-                </h3>
-                <p className="text-muted-foreground">
-                  Tente buscar por outro termo
-                </p>
+                <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum item encontrado</h3>
+                <p className="text-muted-foreground">Tente buscar por outro termo</p>
               </div>
             )}
           </div>
         )}
 
-        <AddItemDialog
-          open={addDialogOpen}
-          onOpenChange={closeAddDialog}
-          defaultSector="bar"
-          defaultCategory={addDialogCategory}
-        />
+        <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" defaultCategory={addDialogCategory} />
 
-        <MovementDialog
-          open={entradaDialogOpen}
-          onOpenChange={setEntradaDialogOpen}
-          type="entrada"
-        />
+        <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" />
 
         <MovementDialog
           open={saidaDialogOpen}
