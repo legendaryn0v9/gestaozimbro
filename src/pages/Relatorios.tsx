@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovementList } from '@/components/inventory/MovementList';
-import { useStockMovements, useMovementDates } from '@/hooks/useInventory';
+import { useStockMovements, useMovementDates, useEmployeeRanking } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ClipboardList, Calendar as CalendarIcon, TrendingUp, TrendingDown, Package, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ClipboardList, Calendar as CalendarIcon, TrendingUp, TrendingDown, Package, Download, ChevronLeft, ChevronRight, Trophy, Medal } from 'lucide-react';
 import { format, subDays, addDays, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ export default function Relatorios() {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const { data: movements = [], isLoading } = useStockMovements(formattedDate);
   const { data: movementDates = [] } = useMovementDates();
+  const { data: ranking = [] } = useEmployeeRanking();
 
   const entradas = movements.filter(m => m.movement_type === 'entrada');
   const saidas = movements.filter(m => m.movement_type === 'saida');
@@ -184,48 +185,100 @@ export default function Relatorios() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="glass rounded-xl p-4 md:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Total de Movimentações</p>
-                <p className="text-2xl md:text-3xl font-display font-bold mt-1">{movements.length}</p>
+        {/* Stats and Ranking */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Stats */}
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="glass rounded-xl p-4 md:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm">Total de Movimentações</p>
+                  <p className="text-2xl md:text-3xl font-display font-bold mt-1">{movements.length}</p>
+                </div>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                </div>
               </div>
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            </div>
+
+            <div className="glass rounded-xl p-4 md:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm">Entradas</p>
+                  <p className="text-2xl md:text-3xl font-display font-bold mt-1 text-success">
+                    +{totalEntradas}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{entradas.length} registros</p>
+                </div>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-success/10 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-success" />
+                </div>
+              </div>
+            </div>
+
+            <div className="glass rounded-xl p-4 md:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm">Saídas</p>
+                  <p className="text-2xl md:text-3xl font-display font-bold mt-1 text-destructive">
+                    -{totalSaidas}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{saidas.length} registros</p>
+                </div>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <TrendingDown className="w-5 h-5 md:w-6 md:h-6 text-destructive" />
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Employee Ranking */}
           <div className="glass rounded-xl p-4 md:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Entradas</p>
-                <p className="text-2xl md:text-3xl font-display font-bold mt-1 text-success">
-                  +{totalEntradas}
-                </p>
-                <p className="text-sm text-muted-foreground">{entradas.length} registros</p>
-              </div>
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-success/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-success" />
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              <h3 className="font-display font-semibold">Top Funcionários (Saídas)</h3>
             </div>
-          </div>
-
-          <div className="glass rounded-xl p-4 md:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Saídas</p>
-                <p className="text-2xl md:text-3xl font-display font-bold mt-1 text-destructive">
-                  -{totalSaidas}
-                </p>
-                <p className="text-sm text-muted-foreground">{saidas.length} registros</p>
+            
+            {ranking.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum registro ainda
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {ranking.map((employee, index) => {
+                  const isTop3 = index < 3;
+                  const medalColors = ['text-amber-500', 'text-gray-400', 'text-amber-700'];
+                  
+                  return (
+                    <div
+                      key={employee.user_id}
+                      className={cn(
+                        'flex items-center gap-3 p-2 rounded-lg transition-colors',
+                        isTop3 ? 'bg-gradient-to-r from-amber-500/10 to-transparent' : 'bg-secondary/30'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold',
+                        isTop3 ? 'bg-amber-500/20' : 'bg-muted'
+                      )}>
+                        {isTop3 ? (
+                          <Medal className={cn('w-4 h-4', medalColors[index])} />
+                        ) : (
+                          <span className="text-muted-foreground">{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{employee.full_name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm text-destructive">{employee.total_saidas}</p>
+                        <p className="text-xs text-muted-foreground">saídas</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <TrendingDown className="w-5 h-5 md:w-6 md:h-6 text-destructive" />
-              </div>
-            </div>
+            )}
           </div>
         </div>
 

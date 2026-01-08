@@ -101,6 +101,56 @@ export function useMovementDates() {
   });
 }
 
+export interface EmployeeRanking {
+  user_id: string;
+  full_name: string;
+  total_saidas: number;
+}
+
+export function useEmployeeRanking() {
+  return useQuery({
+    queryKey: ['employee-ranking'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select(`
+          user_id,
+          quantity,
+          movement_type,
+          profiles (full_name)
+        `)
+        .eq('movement_type', 'saida');
+      
+      if (error) throw error;
+
+      // Aggregate by user
+      const userStats: Record<string, { full_name: string; total: number }> = {};
+      
+      data?.forEach(m => {
+        const userId = m.user_id;
+        const fullName = m.profiles?.full_name || 'Usuário';
+        
+        if (!userStats[userId]) {
+          userStats[userId] = { full_name: fullName, total: 0 };
+        }
+        userStats[userId].total += Number(m.quantity);
+      });
+
+      // Convert to array and sort
+      const ranking: EmployeeRanking[] = Object.entries(userStats)
+        .map(([user_id, stats]) => ({
+          user_id,
+          full_name: stats.full_name,
+          total_saidas: stats.total,
+        }))
+        .sort((a, b) => b.total_saidas - a.total_saidas)
+        .slice(0, 5);
+
+      return ranking;
+    },
+  });
+}
+
 export function useAddItem() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
