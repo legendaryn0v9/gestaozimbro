@@ -19,15 +19,13 @@ interface AddItemDialogProps {
 
 const BAR_CATEGORIES = [
   'Destilados',
-  'Não Alcoólicos',
-  'Alcoólicos',
+  'Vodka',
+  'Gin',
+  'Whisky',
+  'Rum',
+  'Tequila',
+  'Cognac',
 ];
-
-const BAR_SUBCATEGORIES: Record<string, string[]> = {
-  Destilados: ['Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
-  'Não Alcoólicos': ['Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
-  Alcoólicos: ['Cerveja', 'Vinho', 'Licor'],
-};
 
 const COZINHA_CATEGORIES = [
   'Carnes',
@@ -109,17 +107,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const [unit, setUnit] = useState<UnitType>('unidade');
   const [quantity, setQuantity] = useState('0');
   const [minQuantity, setMinQuantity] = useState('');
-  const [category, setCategory] = useState(() => {
-    if (!defaultCategory) return '';
-    if (BAR_CATEGORIES.includes(defaultCategory)) return defaultCategory;
-    const parent = Object.entries(BAR_SUBCATEGORIES).find(([_, subs]) => subs.includes(defaultCategory));
-    return parent ? parent[0] : defaultCategory;
-  });
-  const [subcategory, setSubcategory] = useState(() => {
-    if (!defaultCategory) return '';
-    const parent = Object.entries(BAR_SUBCATEGORIES).find(([_, subs]) => subs.includes(defaultCategory));
-    return parent ? defaultCategory : '';
-  });
+  const [category, setCategory] = useState(defaultCategory || '');
   const [customCategory, setCustomCategory] = useState('');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -130,20 +118,10 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const addItem = useAddItem();
 
   const categories = sector === 'bar' ? BAR_CATEGORIES : COZINHA_CATEGORIES;
-  const subcategories = sector === 'bar' && category ? BAR_SUBCATEGORIES[category] || [] : [];
-
-  const getBarParentCategory = (cat: string) =>
-    Object.entries(BAR_SUBCATEGORIES).find(([_, subs]) => subs.includes(cat))?.[0] ?? null;
 
   // Filtrar produtos do catálogo
-  const catalogKey = defaultCategory
-    ? ((defaultCategory in BAR_PRODUCTS_CATALOG
-        ? defaultCategory
-        : getBarParentCategory(defaultCategory)) as keyof typeof BAR_PRODUCTS_CATALOG | null)
-    : null;
-
-  const catalogProducts = catalogKey
-    ? BAR_PRODUCTS_CATALOG[catalogKey] || []
+  const catalogProducts = defaultCategory && defaultCategory in BAR_PRODUCTS_CATALOG
+    ? BAR_PRODUCTS_CATALOG[defaultCategory as keyof typeof BAR_PRODUCTS_CATALOG]
     : Object.values(BAR_PRODUCTS_CATALOG).flat();
   
   const filteredCatalogProducts = catalogProducts.filter(p => 
@@ -153,7 +131,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const handleSectorChange = (newSector: SectorType) => {
     setSector(newSector);
     setCategory('');
-    setSubcategory('');
     setCustomCategory('');
     setIsCustomCategory(false);
   };
@@ -187,16 +164,10 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
       return customCategory.trim();
     }
 
-    // Para o Bar, quando houver "tipo" selecionado (Vodka, Gin, etc), salvar esse tipo
-    if (sector === 'bar' && !isCustomCategory && subcategory) {
-      return subcategory;
-    }
-
     if (category) {
       return category;
     }
 
-    // fallback
     if (defaultCategory) {
       return defaultCategory;
     }
@@ -210,7 +181,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     setQuantity('0');
     setMinQuantity('');
     setCategory('');
-    setSubcategory('');
     setCustomCategory('');
     setIsCustomCategory(false);
     setImagePreview(null);
@@ -436,7 +406,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                       onClick={() => {
                         setIsCustomCategory(!isCustomCategory);
                         setCategory('');
-                        setSubcategory('');
                         setCustomCategory('');
                       }}
                       className="text-xs text-primary hover:underline"
@@ -454,10 +423,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                   ) : (
                     <Select
                       value={category}
-                      onValueChange={(v) => {
-                        setCategory(v);
-                        setSubcategory('');
-                      }}
+                      onValueChange={setCategory}
                     >
                       <SelectTrigger className="bg-input border-border">
                         <SelectValue placeholder="Selecione..." />
@@ -474,23 +440,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                 </div>
               </div>
 
-              {sector === 'bar' && !isCustomCategory && category && subcategories.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Tipo de {category}</Label>
-                  <Select value={subcategory} onValueChange={setSubcategory}>
-                    <SelectTrigger className="bg-input border-border">
-                      <SelectValue placeholder="Selecione o tipo..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border z-50">
-                      {subcategories.map((sub) => (
-                        <SelectItem key={sub} value={sub}>
-                          {sub}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
