@@ -6,7 +6,7 @@ import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini } from 'lucide-react';
+import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BAR_CATEGORIES = [
@@ -117,21 +117,42 @@ export default function Bar() {
 
   const totalFilteredItems = Object.values(filteredItemsByCategory).reduce((acc, list) => acc + list.length, 0);
 
+  // Calculate total inventory value
+  const totalInventoryValue = useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [items]);
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-amber flex items-center justify-center">
-              <Wine className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+        <div className="flex flex-col gap-4 mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-amber flex items-center justify-center">
+                <Wine className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Bar</h1>
+                <p className="text-sm text-muted-foreground">{items.length} itens no estoque</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Bar</h1>
-              <p className="text-sm text-muted-foreground">{items.length} itens no estoque</p>
+
+            {/* Total Value Card */}
+            <div className="glass rounded-xl p-3 sm:p-4 flex items-center gap-3 border border-primary/20">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Caixa Total do Bar</p>
+                <p className="text-lg sm:text-xl font-bold text-primary">
+                  R$ {totalInventoryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
             </div>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button
               onClick={() => setEntradaDialogOpen(true)}
@@ -287,7 +308,6 @@ export default function Bar() {
                 </section>
               );
             })}
-
 
             {search && totalFilteredItems === 0 && (
               <div className="text-center py-16">

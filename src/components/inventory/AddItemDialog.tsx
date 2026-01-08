@@ -61,6 +61,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const [unit, setUnit] = useState<UnitType>('unidade');
   const [quantity, setQuantity] = useState('0');
   const [minQuantity, setMinQuantity] = useState('');
+  const [price, setPrice] = useState('');
   const [category, setCategory] = useState(defaultCategory || '');
   const [customCategory, setCustomCategory] = useState('');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -129,6 +130,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     setDescription('');
     setQuantity('0');
     setMinQuantity('');
+    setPrice('');
     setCategory('');
     setCustomCategory('');
     setIsCustomCategory(false);
@@ -146,6 +148,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
         unit,
         quantity: Number(quantity),
         min_quantity: minQuantity ? Number(minQuantity) : null,
+        price: price ? Number(price) : 0,
         category: getFinalCategory(),
         image_url: imagePreview,
       },
@@ -297,6 +300,20 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
               value={minQuantity}
               onChange={(e) => setMinQuantity(e.target.value)}
               placeholder="Quantidade para alerta de estoque baixo"
+              className="bg-input border-border"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="price">Valor Unitário (R$)</Label>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0,00"
               className="bg-input border-border"
             />
           </div>

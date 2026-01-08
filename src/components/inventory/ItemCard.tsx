@@ -142,14 +142,32 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-          <span className="text-muted-foreground text-sm">Quantidade</span>
-          <span className={cn(
-            'font-bold text-lg',
-            isOutOfStock ? 'text-destructive' : isLowStock ? 'text-warning' : 'text-foreground'
-          )}>
-            {item.quantity} {unitLabels[item.unit]}
-          </span>
+        <div className="space-y-2 mt-4 pt-3 border-t border-border">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-sm">Quantidade</span>
+            <span className={cn(
+              'font-bold text-lg',
+              isOutOfStock ? 'text-destructive' : isLowStock ? 'text-warning' : 'text-foreground'
+            )}>
+              {item.quantity} {unitLabels[item.unit]}
+            </span>
+          </div>
+          {item.price > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">Valor unitário</span>
+              <span className="font-medium text-foreground">
+                R$ {item.price.toFixed(2).replace('.', ',')}
+              </span>
+            </div>
+          )}
+          {item.price > 0 && item.quantity > 0 && (
+            <div className="flex items-center justify-between bg-primary/10 rounded-lg p-2 -mx-1">
+              <span className="text-sm text-primary font-medium">Total em estoque</span>
+              <span className="font-bold text-primary">
+                {item.quantity} × R$ {item.price.toFixed(2).replace('.', ',')} = R$ {(item.quantity * item.price).toFixed(2).replace('.', ',')}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
