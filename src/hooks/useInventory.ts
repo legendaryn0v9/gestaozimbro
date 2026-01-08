@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -80,11 +81,11 @@ export function useStockMovements(date?: string) {
         .limit(100);
 
       if (date) {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
-        
+        const [y, m, d] = date.split('-').map(Number);
+        // Create boundaries in *local* time to match what user sees in the UI
+        const startOfDay = new Date(y, (m ?? 1) - 1, d ?? 1, 0, 0, 0, 0);
+        const endOfDay = new Date(y, (m ?? 1) - 1, d ?? 1, 23, 59, 59, 999);
+
         query = query
           .gte('created_at', startOfDay.toISOString())
           .lte('created_at', endOfDay.toISOString());
