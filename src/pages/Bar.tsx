@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ItemCard } from '@/components/inventory/ItemCard';
 import { AddItemDialog } from '@/components/inventory/AddItemDialog';
@@ -6,10 +6,23 @@ import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wine, Plus, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Wine, Plus, Search, TrendingUp, TrendingDown, Filter } from 'lucide-react';
+
+const BAR_CATEGORIES = [
+  'Cervejas',
+  'Destilados',
+  'Vinhos',
+  'Refrigerantes',
+  'Sucos',
+  'Águas',
+  'Energéticos',
+  'Outros',
+];
 
 export default function Bar() {
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
@@ -17,9 +30,16 @@ export default function Bar() {
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
 
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const categories = useMemo(() => {
+    const cats = items.map(item => item.category).filter(Boolean) as string[];
+    return [...new Set(cats)];
+  }, [items]);
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleItemClick = (itemId: string) => {
     setSelectedItemId(itemId);
@@ -69,14 +89,30 @@ export default function Bar() {
           </div>
         </div>
 
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar itens do bar..."
-            className="pl-12 h-12 bg-input border-border"
-          />
+        <div className="flex gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar itens do bar..."
+              className="pl-12 h-12 bg-input border-border"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-48 h-12 bg-input border-border">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas Categorias</SelectItem>
+              {BAR_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (
@@ -89,12 +125,12 @@ export default function Bar() {
           <div className="text-center py-16">
             <Wine className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">
-              {search ? 'Nenhum item encontrado' : 'Estoque vazio'}
+              {search || categoryFilter !== 'all' ? 'Nenhum item encontrado' : 'Estoque vazio'}
             </h3>
             <p className="text-muted-foreground mb-6">
-              {search ? 'Tente buscar por outro termo' : 'Adicione o primeiro item ao estoque do bar'}
+              {search || categoryFilter !== 'all' ? 'Tente buscar por outro termo ou categoria' : 'Adicione o primeiro item ao estoque do bar'}
             </p>
-            {!search && (
+            {!search && categoryFilter === 'all' && (
               <Button
                 onClick={() => setAddDialogOpen(true)}
                 className="bg-gradient-amber text-primary-foreground hover:opacity-90"

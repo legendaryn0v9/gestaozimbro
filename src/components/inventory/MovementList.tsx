@@ -64,11 +64,9 @@ export function MovementList({ movements, showDate = true }: MovementListProps) 
                     <User className="w-3 h-3" />
                     <span>{movement.profiles?.full_name}</span>
                   </div>
-                  {showDate && (
-                    <span>
-                      {format(new Date(movement.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  )}
+                  <span>
+                    {format(new Date(movement.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                  </span>
                 </div>
               </div>
             </div>
