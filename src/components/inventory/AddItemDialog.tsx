@@ -19,15 +19,15 @@ interface AddItemDialogProps {
 
 const BAR_CATEGORIES = [
   'Destilados',
+  'Vodka',
+  'Gin',
+  'Whisky',
+  'Rum',
+  'Tequila',
+  'Cognac',
   'Não Alcoólicos',
   'Alcoólicos',
 ];
-
-const BAR_SUBCATEGORIES: Record<string, string[]> = {
-  'Destilados': ['Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
-  'Não Alcoólicos': ['Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
-  'Alcoólicos': ['Cerveja', 'Vinho', 'Licor'],
-};
 
 const COZINHA_CATEGORIES = [
   'Carnes',
@@ -121,8 +121,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const addItem = useAddItem();
 
   const categories = sector === 'bar' ? BAR_CATEGORIES : COZINHA_CATEGORIES;
-  const subcategories = sector === 'bar' && category ? BAR_SUBCATEGORIES[category] || [] : [];
-  const hideCategory = !!defaultCategory;
 
   // Filtrar produtos do catálogo
   const catalogProducts = defaultCategory 
@@ -438,23 +436,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
                 </div>
               </div>
 
-              {sector === 'bar' && !isCustomCategory && category && subcategories.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Tipo de {category}</Label>
-                  <Select value={subcategory} onValueChange={setSubcategory}>
-                    <SelectTrigger className="bg-input border-border">
-                      <SelectValue placeholder="Selecione o tipo..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border z-50">
-                      {subcategories.map((sub) => (
-                        <SelectItem key={sub} value={sub}>
-                          {sub}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
