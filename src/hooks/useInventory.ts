@@ -18,6 +18,7 @@ export interface InventoryItem {
   min_quantity: number | null;
   category: string | null;
   image_url: string | null;
+  price: number;
   created_at: string;
   updated_at: string;
 }

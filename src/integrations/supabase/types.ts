@@ -23,6 +23,7 @@ export type Database = {
           image_url: string | null
           min_quantity: number | null
           name: string
+          price: number
           quantity: number
           sector: Database["public"]["Enums"]["sector_type"]
           unit: Database["public"]["Enums"]["unit_type"]
@@ -36,6 +37,7 @@ export type Database = {
           image_url?: string | null
           min_quantity?: number | null
           name: string
+          price?: number
           quantity?: number
           sector: Database["public"]["Enums"]["sector_type"]
           unit?: Database["public"]["Enums"]["unit_type"]
@@ -49,6 +51,7 @@ export type Database = {
           image_url?: string | null
           min_quantity?: number | null
           name?: string
+          price?: number
           quantity?: number
           sector?: Database["public"]["Enums"]["sector_type"]
           unit?: Database["public"]["Enums"]["unit_type"]

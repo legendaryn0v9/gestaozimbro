@@ -20,6 +20,7 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
   const [unit, setUnit] = useState<UnitType>(item.unit);
   const [quantity, setQuantity] = useState(String(item.quantity));
   const [minQuantity, setMinQuantity] = useState(item.min_quantity ? String(item.min_quantity) : '');
+  const [price, setPrice] = useState(item.price ? String(item.price) : '');
   const [category, setCategory] = useState(item.category || '');
   const [imagePreview, setImagePreview] = useState<string | null>(item.image_url);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +34,7 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
     setUnit(item.unit);
     setQuantity(String(item.quantity));
     setMinQuantity(item.min_quantity ? String(item.min_quantity) : '');
+    setPrice(item.price ? String(item.price) : '');
     setCategory(item.category || '');
     setImagePreview(item.image_url);
   }, [item]);
@@ -66,6 +68,7 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
         unit,
         quantity: Number(quantity),
         min_quantity: minQuantity ? Number(minQuantity) : null,
+        price: price ? Number(price) : 0,
         category: category || null,
         image_url: imagePreview,
       },
@@ -216,6 +219,20 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
               value={minQuantity}
               onChange={(e) => setMinQuantity(e.target.value)}
               placeholder="Quantidade para alerta de estoque baixo"
+              className="bg-input border-border"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-price">Valor Unitário (R$)</Label>
+            <Input
+              id="edit-price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0,00"
               className="bg-input border-border"
             />
           </div>
