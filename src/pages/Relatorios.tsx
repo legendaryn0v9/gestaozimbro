@@ -1,21 +1,40 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovementList } from '@/components/inventory/MovementList';
 import { useStockMovements, useMovementDates, useEmployeeRanking } from '@/hooks/useInventory';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ClipboardList, Calendar as CalendarIcon, TrendingUp, TrendingDown, Package, Download, ChevronLeft, ChevronRight, Trophy, Medal, DollarSign } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ClipboardList, Calendar as CalendarIcon, TrendingUp, TrendingDown, Package, Download, ChevronLeft, ChevronRight, Trophy, Medal, DollarSign, Users } from 'lucide-react';
 import { format, subDays, addDays, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export default function Relatorios() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-  const { data: movements = [], isLoading } = useStockMovements(formattedDate);
+  const { data: allMovements = [], isLoading } = useStockMovements(formattedDate);
   const { data: movementDates = [] } = useMovementDates();
   const { data: ranking = [] } = useEmployeeRanking();
+
+  // Get unique employees from movements
+  const employees = useMemo(() => {
+    const uniqueEmployees = new Map<string, string>();
+    allMovements.forEach(m => {
+      if (m.user_id && m.profiles?.full_name) {
+        uniqueEmployees.set(m.user_id, m.profiles.full_name);
+      }
+    });
+    return Array.from(uniqueEmployees.entries()).map(([id, name]) => ({ id, name }));
+  }, [allMovements]);
+
+  // Filter movements by selected employee
+  const movements = useMemo(() => {
+    if (selectedEmployee === 'all') return allMovements;
+    return allMovements.filter(m => m.user_id === selectedEmployee);
+  }, [allMovements, selectedEmployee]);
 
   const entradas = movements.filter(m => m.movement_type === 'entrada');
   const saidas = movements.filter(m => m.movement_type === 'saida');
@@ -252,10 +271,10 @@ export default function Relatorios() {
           </Button>
         </div>
 
-        {/* Date Navigation */}
+        {/* Filters Row */}
         <div className="glass rounded-2xl p-4 md:p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-            {/* Day Navigator */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Date Navigation */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -316,32 +335,96 @@ export default function Relatorios() {
               </Button>
             </div>
 
-            {/* Recent Days with Movements */}
-            {recentDatesWithMovements.length > 0 && (
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">Dias com movimento:</span>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {recentDatesWithMovements.map((date) => (
-                      <Button
-                        key={date.toISOString()}
-                        variant={isSameDay(selectedDate, date) ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSelectedDate(date)}
-                        className={cn(
-                          'h-8 px-3 text-xs',
-                          isSameDay(selectedDate, date) && 'bg-gradient-amber text-primary-foreground'
-                        )}
-                      >
-                        {format(date, "dd/MM", { locale: ptBR })}
-                      </Button>
-                    ))}
-                  </div>
+            {/* Employee Filter */}
+            <div className="flex items-center gap-2 flex-1">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Filtrar por funcionário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os funcionários</SelectItem>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Recent Days with Movements */}
+          {recentDatesWithMovements.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Dias com movimento:</span>
+                <div className="flex gap-1.5 flex-wrap">
+                  {recentDatesWithMovements.map((date) => (
+                    <Button
+                      key={date.toISOString()}
+                      variant={isSameDay(selectedDate, date) ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedDate(date)}
+                      className={cn(
+                        'h-8 px-3 text-xs',
+                        isSameDay(selectedDate, date) && 'bg-gradient-amber text-primary-foreground'
+                      )}
+                    >
+                      {format(date, "dd/MM", { locale: ptBR })}
+                    </Button>
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateDay('prev')}
+                className="h-10 w-10"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="min-w-[200px] justify-center text-left font-medium"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    locale={ptBR}
+                    className="pointer-events-auto"
+                    modifiers={{
+                      hasMovements: (date) => hasMovements(date),
+                    }}
+                    modifiersClassNames={{
+                      hasMovements: 'bg-primary/20 font-bold',
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateDay('next')}
+                disabled={isSameDay(selectedDate, new Date())}
+                className="h-10 w-10"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+
 
         {/* Financial Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
