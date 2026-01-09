@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Users,
   Crown,
-  User
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useIsAdmin } from '@/hooks/useUserRoles';
@@ -18,6 +17,7 @@ import { useCurrentUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ThemeToggle } from './ThemeToggle';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -54,16 +54,19 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="h-full lg:fixed lg:left-0 lg:top-0 lg:h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-6 border-b border-sidebar-border hidden lg:block">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-amber flex items-center justify-center">
-            <Package className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-amber flex items-center justify-center">
+              <Package className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-display font-bold text-lg text-sidebar-foreground">
+                Bar Estoque
+              </h1>
+              <p className="text-xs text-muted-foreground">Gerenciamento</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-display font-bold text-lg text-sidebar-foreground">
-              Bar Estoque
-            </h1>
-            <p className="text-xs text-muted-foreground">Gerenciamento</p>
-          </div>
+          <ThemeToggle />
         </div>
       </div>
 
