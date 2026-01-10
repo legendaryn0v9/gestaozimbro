@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useInventoryItems, useAddMovement, MovementType } from '@/hooks/useInventory';
+import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useUserSector } from '@/hooks/useUserSector';
 import { TrendingUp, TrendingDown, ArrowRight, Martini, GlassWater, Beer, UtensilsCrossed } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,8 +33,18 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
   const [quantity, setQuantity] = useState('');
   const [notes, setNotes] = useState('');
 
-  const { data: items = [] } = useInventoryItems();
+  const { data: allItems = [] } = useInventoryItems();
+  const { isAdmin } = useIsAdmin();
+  const { sector: userSector } = useUserSector();
   const addMovement = useAddMovement();
+
+  // Filter items by sector for employees
+  const items = useMemo(() => {
+    if (isAdmin || !userSector) {
+      return allItems;
+    }
+    return allItems.filter(item => item.sector === userSector);
+  }, [allItems, isAdmin, userSector]);
 
   // Sync itemId when preselectedItemId changes
   useEffect(() => {
