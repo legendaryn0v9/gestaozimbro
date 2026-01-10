@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          gradient: string | null
+          icon: string | null
+          id: string
+          name: string
+          sector: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gradient?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sector: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gradient?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sector?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string | null
@@ -133,6 +166,38 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
