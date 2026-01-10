@@ -156,7 +156,6 @@ export default function Bar() {
             )}
           </div>
 
-          {/* Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button
               onClick={() => setEntradaDialogOpen(true)}
@@ -164,9 +163,8 @@ export default function Bar() {
               size="sm"
               className="border-success text-success hover:bg-success/10 flex-1 sm:flex-none"
             >
-              <TrendingUp className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Entrada</span>
-              <span className="xs:hidden">+</span>
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Entrada
             </Button>
             <Button
               onClick={() => setSaidaDialogOpen(true)}
@@ -174,9 +172,8 @@ export default function Bar() {
               size="sm"
               className="border-destructive text-destructive hover:bg-destructive/10 flex-1 sm:flex-none"
             >
-              <TrendingDown className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Saída</span>
-              <span className="xs:hidden">-</span>
+              <TrendingDown className="w-4 h-4 mr-2" />
+              Saída
             </Button>
             {isAdmin && (
               <Button 
@@ -184,9 +181,8 @@ export default function Bar() {
                 size="sm"
                 className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
               >
-                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Novo Item</span>
-                <span className="xs:hidden">Novo</span>
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Item
               </Button>
             )}
           </div>
