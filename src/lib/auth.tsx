@@ -60,9 +60,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    // Force redirect to auth page after logout
-    window.location.href = '/auth';
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local state regardless of server response
+      setUser(null);
+      setSession(null);
+      // Clear any stored session data
+      localStorage.removeItem('sb-klltuuwzedbhkbykayyn-auth-token');
+      // Force redirect to auth page after logout
+      window.location.href = '/auth';
+    }
   };
 
   return (
