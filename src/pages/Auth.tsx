@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Wine, Phone, Lock, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
 
@@ -44,19 +45,31 @@ export default function Auth() {
           }
         });
         setErrors(fieldErrors);
-        setLoading(false);
         return;
       }
 
-      // Convert phone to fake email for Supabase auth
-      const fakeEmail = `${phone.replace(/\D/g, '')}@funcionario.local`;
-      
-      const { error } = await signIn(fakeEmail, password);
+      // Resolve phone -> internal email (legacy accounts still have real email)
+      const { data: resolved, error: resolveError } = await supabase.functions.invoke('resolve-phone', {
+        body: { phone },
+      });
+
+      const resolvedEmail = resolved?.email as string | undefined;
+
+      if (resolveError || !resolvedEmail) {
+        toast({
+          title: 'Erro ao entrar',
+          description: 'Telefone ou senha inválidos',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { error } = await signIn(resolvedEmail, password);
       if (error) {
         toast({
           title: 'Erro ao entrar',
-          description: error.message === 'Invalid login credentials' 
-            ? 'Telefone ou senha inválidos' 
+          description: error.message === 'Invalid login credentials'
+            ? 'Telefone ou senha inválidos'
             : error.message,
           variant: 'destructive',
         });
@@ -78,19 +91,13 @@ export default function Auth() {
             <div className="w-16 h-16 rounded-2xl bg-gradient-amber flex items-center justify-center mb-4">
               <Wine className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-display font-bold text-gradient">
-              Bar Estoque
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Entre para gerenciar o estoque
-            </p>
+            <h1 className="text-3xl font-display font-bold text-gradient">Bar Estoque</h1>
+            <p className="text-muted-foreground mt-2">Entre para gerenciar o estoque</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-foreground/80">
-                Telefone
-              </Label>
+              <Label htmlFor="phone" className="text-foreground/80">Telefone</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -108,9 +115,7 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground/80">
-                Senha
-              </Label>
+              <Label htmlFor="password" className="text-foreground/80">Senha</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -144,9 +149,7 @@ export default function Auth() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              Solicite acesso ao seu gestor
-            </p>
+            <p className="text-muted-foreground text-sm">Solicite acesso ao seu gestor</p>
           </div>
         </div>
       </div>
