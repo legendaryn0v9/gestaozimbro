@@ -1,18 +1,48 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { MovementList } from '@/components/inventory/MovementList';
 import { useStockMovements } from '@/hooks/useInventory';
+import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useUserSector } from '@/hooks/useUserSector';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Plus } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrendingUp, Plus, Wine, UtensilsCrossed } from 'lucide-react';
 
 export default function Entrada() {
+  const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const { sector: userSector } = useUserSector();
+  
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: movements = [], isLoading } = useStockMovements();
+  const { data: allMovements = [], isLoading } = useStockMovements();
 
-  const entradas = movements.filter(m => m.movement_type === 'entrada');
+  // Filter movements based on user role
+  const movements = useMemo(() => {
+    const entradas = allMovements.filter(m => m.movement_type === 'entrada');
+    
+    if (isAdmin) {
+      return entradas;
+    }
+    // For employees: only show their own movements from their sector
+    return entradas.filter(m => {
+      const isOwnMovement = m.user_id === user?.id;
+      const isFromUserSector = !userSector || m.inventory_items?.sector === userSector;
+      return isOwnMovement && isFromUserSector;
+    });
+  }, [allMovements, isAdmin, user?.id, userSector]);
+
+  // Separate by sector for admin
+  const barMovements = useMemo(() => 
+    movements.filter(m => m.inventory_items?.sector === 'bar'), 
+    [movements]
+  );
+  
+  const cozinhaMovements = useMemo(() => 
+    movements.filter(m => m.inventory_items?.sector === 'cozinha'), 
+    [movements]
+  );
 
   return (
     <MainLayout>
@@ -25,7 +55,7 @@ export default function Entrada() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">Entradas</h1>
               <p className="text-sm text-muted-foreground">
-                {entradas.length} registros de entrada
+                {movements.length} {isAdmin ? 'registros de entrada' : 'suas entradas'}
               </p>
             </div>
           </div>
@@ -47,8 +77,33 @@ export default function Entrada() {
                 <div key={i} className="h-16 lg:h-20 rounded-xl bg-secondary/50 animate-pulse" />
               ))}
             </div>
+          ) : isAdmin ? (
+            <Tabs defaultValue="bar" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="bar" className="flex items-center gap-2">
+                  <Wine className="w-4 h-4" />
+                  Bar
+                  <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                    {barMovements.length}
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="cozinha" className="flex items-center gap-2">
+                  <UtensilsCrossed className="w-4 h-4" />
+                  Cozinha
+                  <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                    {cozinhaMovements.length}
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="bar">
+                <MovementList movements={barMovements} />
+              </TabsContent>
+              <TabsContent value="cozinha">
+                <MovementList movements={cozinhaMovements} />
+              </TabsContent>
+            </Tabs>
           ) : (
-            <MovementList movements={entradas} />
+            <MovementList movements={movements} />
           )}
         </div>
 
