@@ -1,19 +1,48 @@
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, AppRole } from '@/hooks/useUserRoles';
+import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, useDeleteUser, AppRole } from '@/hooks/useUserRoles';
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Shield, UserCheck, Crown } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Users, Shield, UserCheck, Crown, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Usuarios() {
   const { user } = useAuth();
   const { isAdmin, isLoading: isLoadingRole } = useIsAdmin();
   const { data: users = [], isLoading } = useAllUsersWithRoles();
   const updateRole = useUpdateUserRole();
+  const deleteUser = useDeleteUser();
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for profile updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   if (isLoadingRole) {
     return (
@@ -31,6 +60,10 @@ export default function Usuarios() {
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     updateRole.mutate({ userId, newRole });
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    deleteUser.mutate(userId);
   };
 
   const getInitials = (name: string) => {
@@ -112,29 +145,61 @@ export default function Usuarios() {
                         Você
                       </Badge>
                     ) : (
-                      <Select
-                        value={u.role}
-                        onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
-                        disabled={updateRole.isPending}
-                      >
-                        <SelectTrigger className="w-36 bg-input border-border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">
-                            <div className="flex items-center gap-2">
-                              <Crown className="w-4 h-4 text-amber-500" />
-                              Gestor
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="funcionario">
-                            <div className="flex items-center gap-2">
-                              <UserCheck className="w-4 h-4 text-blue-500" />
-                              Funcionário
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <>
+                        <Select
+                          value={u.role}
+                          onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
+                          disabled={updateRole.isPending}
+                        >
+                          <SelectTrigger className="w-36 bg-input border-border">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">
+                              <div className="flex items-center gap-2">
+                                <Crown className="w-4 h-4 text-amber-500" />
+                                Gestor
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="funcionario">
+                              <div className="flex items-center gap-2">
+                                <UserCheck className="w-4 h-4 text-blue-500" />
+                                Funcionário
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir <strong>{u.full_name}</strong>? 
+                                Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
                     )}
                     
                     <Badge className={
