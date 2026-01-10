@@ -4,38 +4,28 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ItemCard } from '@/components/inventory/ItemCard';
 import { AddItemDialog } from '@/components/inventory/AddItemDialog';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
+import { CategoryManagerDialog } from '@/components/inventory/CategoryManagerDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useUserSector } from '@/hooks/useUserSector';
+import { useCategories, CategoryWithSubcategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini, DollarSign, AlertCircle } from 'lucide-react';
+import { Wine, Plus, Search, TrendingUp, TrendingDown, DollarSign, AlertCircle, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const BAR_CATEGORIES = [
-  {
-    name: 'Destilados',
-    icon: Martini,
-    subcategories: ['Todos', 'Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    name: 'Não Alcoólicos',
-    icon: GlassWater,
-    subcategories: ['Todos', 'Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
-    gradient: 'from-blue-500 to-cyan-600',
-  },
-  {
-    name: 'Alcoólicos',
-    icon: Beer,
-    subcategories: ['Todos', 'Cerveja', 'Vinho', 'Licor'],
-    gradient: 'from-purple-500 to-pink-600',
-  },
-];
+import * as LucideIcons from 'lucide-react';
 
 const normalizeCategory = (category: string | null) => {
   if (!category) return null;
   return category.split(' - ').pop()?.trim() || category;
+};
+
+// Helper to get icon component from string name
+const getIconComponent = (iconName: string | null): React.ComponentType<{ className?: string }> => {
+  if (!iconName) return Package;
+  const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+  const IconComponent = icons[iconName];
+  return IconComponent || Package;
 };
 
 export default function Bar() {
@@ -45,16 +35,29 @@ export default function Bar() {
   
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [addDialogCategory, setAddDialogCategory] = useState<string | undefined>();
-  const [addDialogCategoryType, setAddDialogCategoryType] = useState<'destilados' | 'naoAlcoolicos' | 'alcoolicos'>('destilados');
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
-  const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string>>({
-    Destilados: 'Todos',
-    'Não Alcoólicos': 'Todos',
-    Alcoólicos: 'Todos',
-  });
+  const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string>>({});
+
+  // Fetch dynamic categories
+  const { data: dynamicCategories = [], isLoading: categoriesLoading } = useCategories('bar');
+
+  // Initialize selected subcategories when categories load
+  useEffect(() => {
+    if (dynamicCategories.length > 0) {
+      const initial: Record<string, string> = {};
+      dynamicCategories.forEach((cat) => {
+        if (!selectedSubcategories[cat.name]) {
+          initial[cat.name] = 'Todos';
+        }
+      });
+      if (Object.keys(initial).length > 0) {
+        setSelectedSubcategories((prev) => ({ ...prev, ...initial }));
+      }
+    }
+  }, [dynamicCategories]);
 
   // Redirect if user doesn't have access to bar
   useEffect(() => {
@@ -63,39 +66,33 @@ export default function Bar() {
     }
   }, [canAccessBar, sectorLoading, isAdmin, navigate]);
 
-  const openAddDialog = (category?: string, categoryType: 'destilados' | 'naoAlcoolicos' | 'alcoolicos' = 'destilados') => {
-    setAddDialogCategory(category);
-    setAddDialogCategoryType(categoryType);
+  const openAddDialog = () => {
     setAddDialogOpen(true);
   };
 
   const closeAddDialog = (open: boolean) => {
     setAddDialogOpen(open);
-    if (!open) {
-      setAddDialogCategory(undefined);
-      setAddDialogCategoryType('destilados');
-    }
   };
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
 
-  // Agrupar itens por categoria principal (Destilados / Não Alcoólicos / Alcoólicos)
+  // Group items by dynamic category
   const itemsByCategory = useMemo(() => {
     const grouped: Record<string, typeof items> = {};
 
-    BAR_CATEGORIES.forEach((cat) => {
-      const allowed = new Set(cat.subcategories.filter((s) => s !== 'Todos'));
+    dynamicCategories.forEach((cat) => {
+      const subcategoryNames = new Set(cat.subcategories.map((s) => s.name));
       grouped[cat.name] = items.filter((item) => {
         const n = normalizeCategory(item.category);
         if (!n) return false;
-        return n === cat.name || allowed.has(n);
+        return n === cat.name || subcategoryNames.has(n);
       });
     });
 
     return grouped;
-  }, [items]);
+  }, [items, dynamicCategories]);
 
-  // Filtrar por aba (subcategoria) + busca
+  // Filter by subcategory + search
   const filteredItemsByCategory = useMemo(() => {
     const filtered: Record<string, typeof items> = {};
 
@@ -137,7 +134,7 @@ export default function Bar() {
   }, [items]);
 
   // Show loading while checking sector access
-  if (sectorLoading) {
+  if (sectorLoading || categoriesLoading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
@@ -212,14 +209,25 @@ export default function Bar() {
               Saída
             </Button>
             {isAdmin && (
-              <Button 
-                onClick={() => openAddDialog()} 
-                size="sm"
-                className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Item
-              </Button>
+              <>
+                <Button
+                  onClick={() => setCategoryManagerOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Categorias
+                </Button>
+                <Button 
+                  onClick={() => openAddDialog()} 
+                  size="sm"
+                  className="bg-gradient-amber text-primary-foreground hover:opacity-90 flex-1 sm:flex-none"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Novo Item
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -248,7 +256,19 @@ export default function Bar() {
               </div>
             ))}
           </div>
-        ) : totalFilteredItems === 0 && !search ? (
+        ) : dynamicCategories.length === 0 ? (
+          <div className="text-center py-16">
+            <Settings className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma categoria criada</h3>
+            <p className="text-muted-foreground mb-6">Crie categorias para organizar o estoque do bar</p>
+            {isAdmin && (
+              <Button onClick={() => setCategoryManagerOpen(true)} className="bg-gradient-amber text-primary-foreground hover:opacity-90">
+                <Settings className="w-4 h-4 mr-2" />
+                Gerenciar Categorias
+              </Button>
+            )}
+          </div>
+        ) : totalFilteredItems === 0 && !search && items.length === 0 ? (
           <div className="text-center py-16">
             <Wine className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Estoque vazio</h3>
@@ -262,16 +282,17 @@ export default function Bar() {
           </div>
         ) : (
           <div className="space-y-10">
-            {BAR_CATEGORIES.map((category) => {
+            {dynamicCategories.map((category: CategoryWithSubcategories) => {
               const categoryItems = filteredItemsByCategory[category.name] || [];
-              const Icon = category.icon;
+              const Icon = getIconComponent(category.icon);
               const selectedSub = selectedSubcategories[category.name] || 'Todos';
+              const subcategories = ['Todos', ...category.subcategories.map((s) => s.name)];
 
               return (
-                <section key={category.name} className="space-y-4">
+                <section key={category.id} className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient} flex items-center justify-center`}
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient || 'from-amber-500 to-orange-600'} flex items-center justify-center`}
                     >
                       <Icon className="w-5 h-5 text-white" />
                     </div>
@@ -285,11 +306,7 @@ export default function Bar() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          const catType = category.name === 'Não Alcoólicos' ? 'naoAlcoolicos' : 
-                                          category.name === 'Alcoólicos' ? 'alcoolicos' : 'destilados';
-                          openAddDialog(selectedSub !== 'Todos' ? selectedSub : undefined, catType);
-                        }}
+                        onClick={() => openAddDialog()}
                         className="text-primary border-primary hover:bg-primary/10"
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -300,7 +317,7 @@ export default function Bar() {
 
                   {/* Subcategory tabs - horizontal scroll on mobile */}
                   <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:flex-wrap scrollbar-hide">
-                    {category.subcategories.map((sub) => {
+                    {subcategories.map((sub) => {
                       const isSelected = selectedSub === sub;
                       const subCount =
                         sub === 'Todos'
@@ -317,7 +334,7 @@ export default function Bar() {
                           onClick={() => handleSubcategoryChange(category.name, sub)}
                           className={cn(
                             'h-8 text-xs whitespace-nowrap flex-shrink-0',
-                            isSelected ? `bg-gradient-to-r ${category.gradient} text-white border-0` : 'hover:bg-secondary'
+                            isSelected ? `bg-gradient-to-r ${category.gradient || 'from-amber-500 to-orange-600'} text-white border-0` : 'hover:bg-secondary'
                           )}
                         >
                           {sub}
@@ -361,7 +378,7 @@ export default function Bar() {
           </div>
         )}
 
-        <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" defaultCategory={addDialogCategory} categoryType={addDialogCategoryType} />
+        <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" />
 
         <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" />
 
@@ -373,6 +390,12 @@ export default function Bar() {
           }}
           type="saida"
           preselectedItemId={selectedItemId}
+        />
+
+        <CategoryManagerDialog
+          open={categoryManagerOpen}
+          onOpenChange={setCategoryManagerOpen}
+          sector="bar"
         />
       </div>
     </MainLayout>
