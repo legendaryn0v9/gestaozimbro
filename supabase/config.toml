@@ -1,1 +1,4 @@
 project_id = "klltuuwzedbhkbykayyn"
+
+[functions.resolve-phone]
+verify_jwt = false
