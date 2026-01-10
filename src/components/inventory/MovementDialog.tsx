@@ -8,7 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useInventoryItems, useAddMovement, MovementType } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useUserSector } from '@/hooks/useUserSector';
-import { TrendingUp, TrendingDown, ArrowRight, Martini, GlassWater, Beer, UtensilsCrossed } from 'lucide-react';
+import { useCategories } from '@/hooks/useCategories';
+import { TrendingUp, TrendingDown, ArrowRight, Package } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MovementDialogProps {
@@ -18,14 +20,23 @@ interface MovementDialogProps {
   preselectedItemId?: string;
 }
 
-// Categorias do Bar
-const BAR_DESTILADOS = ['Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'];
-const BAR_NAO_ALCOOLICOS = ['Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'];
-const BAR_ALCOOLICOS = ['Cerveja', 'Vinho', 'Licor'];
+// Helper to get icon component
+const getIconComponent = (iconName: string | null): React.ComponentType<{ className?: string }> => {
+  if (!iconName) return Package;
+  const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+  return icons[iconName] || Package;
+};
 
-const normalizeCategory = (category: string | null) => {
-  if (!category) return null;
-  return category.split(' - ').pop()?.trim() || category;
+// Helper to extract gradient colors for text
+const getGradientTextColor = (gradient: string | null) => {
+  if (!gradient) return 'text-amber-500';
+  
+  // Extract the first color from gradient (e.g., "from-amber-500 to-orange-600" -> "amber-500")
+  const match = gradient.match(/from-([a-z]+-\d+)/);
+  if (match) {
+    return `text-${match[1]}`;
+  }
+  return 'text-amber-500';
 };
 
 export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: MovementDialogProps) {
@@ -37,6 +48,10 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
   const { isAdmin } = useIsAdmin();
   const { sector: userSector } = useUserSector();
   const addMovement = useAddMovement();
+  
+  // Fetch categories for both sectors
+  const { data: barCategories = [] } = useCategories('bar');
+  const { data: cozinhaCategories = [] } = useCategories('cozinha');
 
   // Filter items by sector for employees
   const items = useMemo(() => {
@@ -69,50 +84,74 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
     }
   }, [open, preselectedItemId]);
 
-  // Organize items by categories
-  const itemsByCategory = useMemo(() => {
+  // Organize items by categories from database
+  const organizedItems = useMemo(() => {
     const barItems = items.filter(i => i.sector === 'bar');
     const cozinhaItems = items.filter(i => i.sector === 'cozinha');
+    
+    // Get categories in order (sort_order)
+    const categories = userSector === 'bar' ? barCategories : 
+                       userSector === 'cozinha' ? cozinhaCategories :
+                       [...barCategories, ...cozinhaCategories];
+    
+    const sectorItems = userSector === 'bar' ? barItems :
+                        userSector === 'cozinha' ? cozinhaItems :
+                        [...barItems, ...cozinhaItems];
 
-    const destilados = barItems.filter(i => {
-      const cat = normalizeCategory(i.category);
-      return cat && BAR_DESTILADOS.includes(cat);
-    });
+    // Group items by category
+    const grouped: Array<{
+      category: typeof categories[0];
+      items: typeof items;
+      subcategories: Array<{
+        subcategory: typeof categories[0]['subcategories'][0];
+        items: typeof items;
+      }>;
+    }> = [];
 
-    const naoAlcoolicos = barItems.filter(i => {
-      const cat = normalizeCategory(i.category);
-      return cat && BAR_NAO_ALCOOLICOS.includes(cat);
-    });
+    categories.forEach(category => {
+      const categoryItems = sectorItems.filter(item => {
+        const itemCategory = item.category?.split(' - ')[0]?.trim();
+        return itemCategory === category.name;
+      });
 
-    const alcoolicos = barItems.filter(i => {
-      const cat = normalizeCategory(i.category);
-      return cat && BAR_ALCOOLICOS.includes(cat);
-    });
+      if (categoryItems.length > 0 || category.subcategories.length > 0) {
+        const subcategoryGroups: typeof grouped[0]['subcategories'] = [];
+        
+        // Group by subcategories
+        category.subcategories.forEach(sub => {
+          const subItems = sectorItems.filter(item => {
+            const parts = item.category?.split(' - ');
+            const itemSubcategory = parts?.[1]?.trim();
+            return itemSubcategory === sub.name;
+          });
+          
+          if (subItems.length > 0) {
+            subcategoryGroups.push({
+              subcategory: sub,
+              items: subItems,
+            });
+          }
+        });
 
-    // Items that don't fit in any category
-    const outrosBar = barItems.filter(i => {
-      const cat = normalizeCategory(i.category);
-      return !cat || (!BAR_DESTILADOS.includes(cat) && !BAR_NAO_ALCOOLICOS.includes(cat) && !BAR_ALCOOLICOS.includes(cat));
-    });
+        // Items directly in category (no subcategory)
+        const directItems = categoryItems.filter(item => {
+          const parts = item.category?.split(' - ');
+          return parts?.length === 1;
+        });
 
-    // Group cozinha items by category
-    const cozinhaCategorias = new Map<string, typeof items>();
-    cozinhaItems.forEach(item => {
-      const cat = item.category || 'Outros';
-      if (!cozinhaCategorias.has(cat)) {
-        cozinhaCategorias.set(cat, []);
+        grouped.push({
+          category,
+          items: directItems,
+          subcategories: subcategoryGroups,
+        });
       }
-      cozinhaCategorias.get(cat)!.push(item);
     });
 
-    return {
-      destilados,
-      naoAlcoolicos,
-      alcoolicos,
-      outrosBar,
-      cozinha: cozinhaCategorias,
-    };
-  }, [items]);
+    // Items without category
+    const uncategorized = sectorItems.filter(item => !item.category);
+
+    return { grouped, uncategorized };
+  }, [items, barCategories, cozinhaCategories, userSector]);
 
   const selectedItem = items.find(i => i.id === itemId);
 
@@ -177,59 +216,44 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
                 <SelectValue placeholder="Escolha um item..." />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {/* Destilados */}
-                {itemsByCategory.destilados.length > 0 && (
+                {/* Categories in order with their colors */}
+                {organizedItems.grouped.map(({ category, items: directItems, subcategories }) => {
+                  const IconComponent = getIconComponent(category.icon);
+                  const textColorClass = getGradientTextColor(category.gradient);
+                  
+                  return (
+                    <SelectGroup key={category.id}>
+                      <SelectLabel className={cn("flex items-center gap-2 font-semibold", textColorClass)}>
+                        <IconComponent className="w-3.5 h-3.5" />
+                        {category.name}
+                      </SelectLabel>
+                      
+                      {/* Direct items in category */}
+                      {directItems.map(renderItemOption)}
+                      
+                      {/* Subcategory items */}
+                      {subcategories.map(({ subcategory, items: subItems }) => (
+                        <div key={subcategory.id}>
+                          <div className={cn("pl-5 text-xs font-medium py-1", textColorClass, "opacity-70")}>
+                            └ {subcategory.name}
+                          </div>
+                          {subItems.map(renderItemOption)}
+                        </div>
+                      ))}
+                    </SelectGroup>
+                  );
+                })}
+                
+                {/* Uncategorized items */}
+                {organizedItems.uncategorized.length > 0 && (
                   <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2 text-amber-500">
-                      <Martini className="w-3.5 h-3.5" />
-                      Destilados
+                    <SelectLabel className="text-muted-foreground flex items-center gap-2">
+                      <Package className="w-3.5 h-3.5" />
+                      Sem Categoria
                     </SelectLabel>
-                    {itemsByCategory.destilados.map(renderItemOption)}
+                    {organizedItems.uncategorized.map(renderItemOption)}
                   </SelectGroup>
                 )}
-
-                {/* Não Alcoólicos */}
-                {itemsByCategory.naoAlcoolicos.length > 0 && (
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2 text-blue-500">
-                      <GlassWater className="w-3.5 h-3.5" />
-                      Não Alcoólicos
-                    </SelectLabel>
-                    {itemsByCategory.naoAlcoolicos.map(renderItemOption)}
-                  </SelectGroup>
-                )}
-
-                {/* Alcoólicos */}
-                {itemsByCategory.alcoolicos.length > 0 && (
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2 text-purple-500">
-                      <Beer className="w-3.5 h-3.5" />
-                      Alcoólicos
-                    </SelectLabel>
-                    {itemsByCategory.alcoolicos.map(renderItemOption)}
-                  </SelectGroup>
-                )}
-
-                {/* Outros Bar */}
-                {itemsByCategory.outrosBar.length > 0 && (
-                  <SelectGroup>
-                    <SelectLabel className="text-muted-foreground">
-                      Outros (Bar)
-                    </SelectLabel>
-                    {itemsByCategory.outrosBar.map(renderItemOption)}
-                  </SelectGroup>
-                )}
-
-                {/* Cozinha - by category */}
-                {Array.from(itemsByCategory.cozinha.entries()).map(([category, categoryItems]) => (
-                  <SelectGroup key={category}>
-                    <SelectLabel className="flex items-center gap-2 text-orange-500">
-                      <UtensilsCrossed className="w-3.5 h-3.5" />
-                      Cozinha - {category}
-                    </SelectLabel>
-                    {categoryItems.map(renderItemOption)}
-                  </SelectGroup>
-                ))}
               </SelectContent>
             </Select>
           </div>
