@@ -2,7 +2,6 @@ import { Menu, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
-import { ThemeToggle } from './ThemeToggle';
 import { useState } from 'react';
 
 export function MobileHeader() {
@@ -29,8 +28,6 @@ export function MobileHeader() {
           <h1 className="font-display font-bold text-sidebar-foreground">Bar Estoque</h1>
         </div>
       </div>
-
-      <ThemeToggle />
     </header>
   );
 }
