@@ -7,9 +7,10 @@ const corsHeaders = {
 };
 
 interface CreateEmployeeRequest {
-  email: string;
+  phone: string;
   password: string;
   fullName: string;
+  sector: 'bar' | 'cozinha';
   avatarUrl?: string;
 }
 
@@ -63,39 +64,57 @@ serve(async (req: Request) => {
       );
     }
 
-    const { email, password, fullName, avatarUrl }: CreateEmployeeRequest = await req.json();
+    const { phone, password, fullName, sector, avatarUrl }: CreateEmployeeRequest = await req.json();
 
-    if (!email || !password || !fullName) {
+    if (!phone || !password || !fullName || !sector) {
       return new Response(
-        JSON.stringify({ error: "Email, senha e nome são obrigatórios" }),
+        JSON.stringify({ error: "Telefone, senha, nome e setor são obrigatórios" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Create a fake email using phone number (Supabase requires email)
+    const fakeEmail = `${phone.replace(/\D/g, '')}@funcionario.local`;
+
     // Create the user with admin API
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: fakeEmail,
       password,
       email_confirm: true,
       user_metadata: {
         full_name: fullName,
+        phone: phone,
+        sector: sector,
         avatar_url: avatarUrl,
       },
     });
 
     if (createError) {
       console.error("Error creating user:", createError);
+      
+      // Check if it's a duplicate phone error
+      if (createError.message.includes('already been registered')) {
+        return new Response(
+          JSON.stringify({ error: "Este telefone já está cadastrado" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Update profile with avatar if provided
-    if (avatarUrl && newUser.user) {
+    // Update profile with phone and sector
+    if (newUser.user) {
       await supabaseAdmin
         .from("profiles")
-        .update({ avatar_url: avatarUrl })
+        .update({ 
+          phone: phone,
+          sector: sector,
+          avatar_url: avatarUrl || null
+        })
         .eq("id", newUser.user.id);
     }
 

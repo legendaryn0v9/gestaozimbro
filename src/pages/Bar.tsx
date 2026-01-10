@@ -1,13 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ItemCard } from '@/components/inventory/ItemCard';
 import { AddItemDialog } from '@/components/inventory/AddItemDialog';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useUserSector } from '@/hooks/useUserSector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini, DollarSign } from 'lucide-react';
+import { Wine, Plus, Search, TrendingUp, TrendingDown, GlassWater, Beer, Martini, DollarSign, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BAR_CATEGORIES = [
@@ -37,6 +39,10 @@ const normalizeCategory = (category: string | null) => {
 };
 
 export default function Bar() {
+  const navigate = useNavigate();
+  const { canAccessBar, isLoading: sectorLoading } = useUserSector();
+  const { isAdmin } = useIsAdmin();
+  
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addDialogCategory, setAddDialogCategory] = useState<string | undefined>();
@@ -49,6 +55,13 @@ export default function Bar() {
     'Não Alcoólicos': 'Todos',
     Alcoólicos: 'Todos',
   });
+
+  // Redirect if user doesn't have access to bar
+  useEffect(() => {
+    if (!sectorLoading && !canAccessBar && !isAdmin) {
+      navigate('/cozinha');
+    }
+  }, [canAccessBar, sectorLoading, isAdmin, navigate]);
 
   const openAddDialog = (category?: string, categoryType: 'destilados' | 'naoAlcoolicos' | 'alcoolicos' = 'destilados') => {
     setAddDialogCategory(category);
@@ -65,7 +78,6 @@ export default function Bar() {
   };
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
-  const { isAdmin } = useIsAdmin();
 
   // Agrupar itens por categoria principal (Destilados / Não Alcoólicos / Alcoólicos)
   const itemsByCategory = useMemo(() => {
@@ -123,6 +135,30 @@ export default function Bar() {
   const totalInventoryValue = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [items]);
+
+  // Show loading while checking sector access
+  if (sectorLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-pulse text-muted-foreground">Carregando...</div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Show access denied message
+  if (!canAccessBar && !isAdmin) {
+    return (
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <AlertCircle className="w-16 h-16 text-destructive mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
+          <p className="text-muted-foreground">Você não tem permissão para acessar o Bar.</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
