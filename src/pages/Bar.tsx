@@ -43,25 +43,9 @@ export default function Bar() {
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
-  const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string>>({});
 
   // Fetch dynamic categories
   const { data: dynamicCategories = [], isLoading: categoriesLoading } = useCategories('bar');
-
-  // Initialize selected subcategories when categories load
-  useEffect(() => {
-    if (dynamicCategories.length > 0) {
-      const initial: Record<string, string> = {};
-      dynamicCategories.forEach((cat) => {
-        if (!selectedSubcategories[cat.name]) {
-          initial[cat.name] = 'Todos';
-        }
-      });
-      if (Object.keys(initial).length > 0) {
-        setSelectedSubcategories((prev) => ({ ...prev, ...initial }));
-      }
-    }
-  }, [dynamicCategories]);
 
   // Redirect if user doesn't have access to bar
   useEffect(() => {
@@ -70,7 +54,7 @@ export default function Bar() {
     }
   }, [canAccessBar, sectorLoading, isAdmin, navigate]);
 
-  const openAddDialog = () => {
+  const openAddDialog = (category?: string) => {
     setAddDialogOpen(true);
   };
 
@@ -80,57 +64,80 @@ export default function Bar() {
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
 
-  // Group items by dynamic category
-  const itemsByCategory = useMemo(() => {
-    const grouped: Record<string, typeof items> = {};
+  // Group items by category and subcategory
+  const organizedItems = useMemo(() => {
+    const result: Record<string, {
+      categoryItems: typeof items;
+      subcategories: Record<string, typeof items>;
+    }> = {};
 
     dynamicCategories.forEach((cat) => {
-      const subcategoryNames = new Set(cat.subcategories.map((s) => s.name));
-      grouped[cat.name] = items.filter((item) => {
+      // Items directly in the main category (not in any subcategory)
+      const directCategoryItems = items.filter((item) => {
         const n = normalizeCategory(item.category);
-        if (!n) return false;
-        return n === cat.name || subcategoryNames.has(n);
+        return n === cat.name;
       });
+
+      // Items grouped by subcategory
+      const subcategoryItems: Record<string, typeof items> = {};
+      cat.subcategories.forEach((sub) => {
+        subcategoryItems[sub.name] = items.filter((item) => {
+          const n = normalizeCategory(item.category);
+          return n === sub.name;
+        });
+      });
+
+      result[cat.name] = {
+        categoryItems: directCategoryItems,
+        subcategories: subcategoryItems,
+      };
     });
 
-    return grouped;
+    return result;
   }, [items, dynamicCategories]);
 
-  // Filter by subcategory + search
-  const filteredItemsByCategory = useMemo(() => {
-    const filtered: Record<string, typeof items> = {};
+  // Filter by search
+  const filteredOrganizedItems = useMemo(() => {
+    if (!search) return organizedItems;
 
-    Object.entries(itemsByCategory).forEach(([cat, catItems]) => {
-      let result = catItems;
+    const filtered: typeof organizedItems = {};
 
-      const selectedSub = selectedSubcategories[cat];
-      if (selectedSub && selectedSub !== 'Todos') {
-        result = result.filter((item) => normalizeCategory(item.category) === selectedSub);
-      }
+    Object.entries(organizedItems).forEach(([catName, data]) => {
+      const filteredCategoryItems = data.categoryItems.filter((item) =>
+        item.name.toLowerCase().includes(search.toLowerCase())
+      );
 
-      if (search) {
-        result = result.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
-      }
+      const filteredSubcategories: Record<string, typeof items> = {};
+      Object.entries(data.subcategories).forEach(([subName, subItems]) => {
+        filteredSubcategories[subName] = subItems.filter((item) =>
+          item.name.toLowerCase().includes(search.toLowerCase())
+        );
+      });
 
-      filtered[cat] = result;
+      filtered[catName] = {
+        categoryItems: filteredCategoryItems,
+        subcategories: filteredSubcategories,
+      };
     });
 
     return filtered;
-  }, [itemsByCategory, selectedSubcategories, search]);
+  }, [organizedItems, search]);
+
+  const totalFilteredItems = useMemo(() => {
+    let count = 0;
+    Object.values(filteredOrganizedItems).forEach((data) => {
+      count += data.categoryItems.length;
+      Object.values(data.subcategories).forEach((subItems) => {
+        count += subItems.length;
+      });
+    });
+    return count;
+  }, [filteredOrganizedItems]);
 
   const handleItemClick = (itemId: string) => {
     setSelectedItemId(itemId);
     setSaidaDialogOpen(true);
   };
-
-  const handleSubcategoryChange = (category: string, subcategory: string) => {
-    setSelectedSubcategories((prev) => ({
-      ...prev,
-      [category]: subcategory,
-    }));
-  };
-
-  const totalFilteredItems = Object.values(filteredItemsByCategory).reduce((acc, list) => acc + list.length, 0);
 
   // Calculate total inventory value
   const totalInventoryValue = useMemo(() => {
@@ -287,30 +294,33 @@ export default function Bar() {
         ) : (
           <div className="space-y-10">
             {dynamicCategories.map((category: CategoryWithSubcategories) => {
-              const categoryItems = filteredItemsByCategory[category.name] || [];
+              const categoryData = filteredOrganizedItems[category.name];
+              if (!categoryData) return null;
+
               const Icon = getIconComponent(category.icon);
-              const selectedSub = selectedSubcategories[category.name] || 'Todos';
-              const subcategories = ['Todos', ...category.subcategories.map((s) => s.name)];
+              const totalCategoryItems = categoryData.categoryItems.length + 
+                Object.values(categoryData.subcategories).reduce((acc, items) => acc + items.length, 0);
 
               return (
-                <section key={category.id} className="space-y-4">
+                <section key={category.id} className="space-y-6">
+                  {/* Category Header */}
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient || 'from-amber-500 to-orange-600'} flex items-center justify-center`}
+                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient || 'from-amber-500 to-orange-600'} flex items-center justify-center shadow-lg`}
                     >
-                      <Icon className="w-5 h-5 text-white" />
+                      <Icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-display font-semibold text-foreground">{category.name}</h2>
+                      <h2 className="text-2xl font-display font-bold text-foreground">{category.name}</h2>
                       <p className="text-sm text-muted-foreground">
-                        {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'itens'}
+                        {totalCategoryItems} {totalCategoryItems === 1 ? 'item' : 'itens'}
                       </p>
                     </div>
                     {isAdmin && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openAddDialog()}
+                        onClick={() => openAddDialog(category.name)}
                         className="text-primary border-primary hover:bg-primary/10"
                       >
                         <Plus className="w-4 h-4 mr-1" />
@@ -319,53 +329,58 @@ export default function Bar() {
                     )}
                   </div>
 
-                  {/* Subcategory tabs - horizontal scroll on mobile */}
-                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:flex-wrap scrollbar-hide">
-                    {subcategories.map((sub) => {
-                      const isSelected = selectedSub === sub;
-                      const subCount =
-                        sub === 'Todos'
-                          ? (itemsByCategory[category.name]?.length || 0)
-                          : (itemsByCategory[category.name] || []).filter(
-                              (item) => normalizeCategory(item.category) === sub
-                            ).length;
-
-                      return (
-                        <Button
-                          key={sub}
-                          variant={isSelected ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => handleSubcategoryChange(category.name, sub)}
-                          className={cn(
-                            'h-8 text-xs whitespace-nowrap flex-shrink-0',
-                            isSelected ? `bg-gradient-to-r ${category.gradient || 'from-amber-500 to-orange-600'} text-white border-0` : 'hover:bg-secondary'
-                          )}
-                        >
-                          {sub}
-                          <span
-                            className={cn(
-                              'ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]',
-                              isSelected ? 'bg-white/20' : 'bg-muted'
-                            )}
-                          >
-                            {subCount}
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </div>
-
-                  {categoryItems.length === 0 ? (
-                    <div className="glass rounded-xl p-6 text-center border-dashed border-2 border-border">
-                      <p className="text-muted-foreground">
-                        {selectedSub !== 'Todos' ? `Nenhum item em ${selectedSub}` : `Nenhum item em ${category.name}`}
-                      </p>
-                    </div>
-                  ) : (
+                  {/* Items directly in category (no subcategory) */}
+                  {categoryData.categoryItems.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
-                      {categoryItems.map((item) => (
+                      {categoryData.categoryItems.map((item) => (
                         <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
                       ))}
+                    </div>
+                  )}
+
+                  {/* Subcategories */}
+                  {category.subcategories.map((sub) => {
+                    const subItems = categoryData.subcategories[sub.name] || [];
+                    
+                    return (
+                      <div key={sub.id} className="space-y-3">
+                        {/* Subcategory Header */}
+                        <div className="flex items-center gap-2 pl-2 border-l-4 border-primary/30">
+                          <h3 className="text-lg font-semibold text-foreground/90">{sub.name}</h3>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {subItems.length} {subItems.length === 1 ? 'item' : 'itens'}
+                          </span>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openAddDialog(sub.name)}
+                              className="ml-auto h-7 text-xs text-primary hover:bg-primary/10"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Adicionar
+                            </Button>
+                          )}
+                        </div>
+
+                        {subItems.length === 0 ? (
+                          <div className="glass rounded-lg p-4 text-center border-dashed border border-border ml-4">
+                            <p className="text-sm text-muted-foreground">Nenhum item em {sub.name}</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 ml-4">
+                            {subItems.map((item) => (
+                              <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {totalCategoryItems === 0 && (
+                    <div className="glass rounded-xl p-6 text-center border-dashed border-2 border-border">
+                      <p className="text-muted-foreground">Nenhum item em {category.name}</p>
                     </div>
                   )}
                 </section>
