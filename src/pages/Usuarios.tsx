@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone } from 'lucide-react';
+import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, RefreshCw } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Usuarios() {
   const { user } = useAuth();
@@ -22,6 +23,48 @@ export default function Usuarios() {
   const updateSector = useUpdateUserSector();
   const deleteUser = useDeleteUser();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [migratingUser, setMigratingUser] = useState<string | null>(null);
+
+  const handleMigrateToPhone = async (userId: string, phone: string) => {
+    if (!phone) {
+      toast({
+        title: 'Erro',
+        description: 'O usuário precisa ter um telefone cadastrado',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setMigratingUser(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke('migrate-to-phone', {
+        body: { userId, phone },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: 'Migração concluída!',
+        description: 'O usuário agora pode fazer login com telefone.',
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+    } catch (error: any) {
+      toast({
+        title: 'Erro na migração',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setMigratingUser(null);
+    }
+  };
+
+  const needsMigration = (email: string) => {
+    return !email.endsWith('@funcionario.local');
+  };
 
   // Real-time subscription for profile updates
   useEffect(() => {
@@ -213,6 +256,26 @@ export default function Usuarios() {
                             </SelectItem>
                           </SelectContent>
                         </Select>
+
+                        {/* Migrate to Phone Button */}
+                        {needsMigration(u.email) && u.phone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleMigrateToPhone(u.id, u.phone!)}
+                            disabled={migratingUser === u.id}
+                            className="text-primary border-primary hover:bg-primary/10"
+                          >
+                            {migratingUser === u.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Phone className="w-4 h-4 mr-1" />
+                                Migrar
+                              </>
+                            )}
+                          </Button>
+                        )}
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

@@ -5,16 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Wine, Phone, Lock, ArrowRight, Mail } from 'lucide-react';
+import { Wine, Phone, Lock, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  identifier: z.string().trim().min(1, { message: 'Informe o telefone ou email' }),
+  phone: z.string().trim().min(8, { message: 'Telefone deve ter pelo menos 8 caracteres' }),
   password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
 });
 
 export default function Auth() {
-  const [identifier, setIdentifier] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -35,7 +35,7 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const result = loginSchema.safeParse({ identifier, password });
+      const result = loginSchema.safeParse({ phone, password });
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.errors.forEach((err) => {
@@ -48,23 +48,15 @@ export default function Auth() {
         return;
       }
 
-      // Check if it's an email or phone
-      const isEmail = identifier.includes('@');
-      let email: string;
+      // Convert phone to fake email for Supabase auth
+      const fakeEmail = `${phone.replace(/\D/g, '')}@funcionario.local`;
       
-      if (isEmail) {
-        email = identifier;
-      } else {
-        // Convert phone to fake email for Supabase auth
-        email = `${identifier.replace(/\D/g, '')}@funcionario.local`;
-      }
-      
-      const { error } = await signIn(email, password);
+      const { error } = await signIn(fakeEmail, password);
       if (error) {
         toast({
           title: 'Erro ao entrar',
           description: error.message === 'Invalid login credentials' 
-            ? 'Credenciais inválidas' 
+            ? 'Telefone ou senha inválidos' 
             : error.message,
           variant: 'destructive',
         });
@@ -96,22 +88,22 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="identifier" className="text-foreground/80">
-                Telefone ou Email
+              <Label htmlFor="phone" className="text-foreground/80">
+                Telefone
               </Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
-                  id="identifier"
-                  type="text"
-                  placeholder="Telefone ou email"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  id="phone"
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="pl-10 bg-input border-border focus:border-primary"
                 />
               </div>
-              {errors.identifier && (
-                <p className="text-destructive text-sm">{errors.identifier}</p>
+              {errors.phone && (
+                <p className="text-destructive text-sm">{errors.phone}</p>
               )}
             </div>
 
