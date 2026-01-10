@@ -23,6 +23,13 @@ export default function Dashboard() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: allMovements = [] } = useStockMovements(today);
 
+  // Filter items based on user sector
+  const sectorItems = useMemo(() => {
+    if (isAdmin) return items;
+    if (!userSector) return items;
+    return items.filter(i => i.sector === userSector);
+  }, [items, isAdmin, userSector]);
+
   // Filter movements based on user role
   const movements = useMemo(() => {
     if (isAdmin) {
@@ -31,7 +38,6 @@ export default function Dashboard() {
     // For employees: only show their own movements from their sector
     return allMovements.filter(m => {
       const isOwnMovement = m.user_id === user?.id;
-      // If userSector is null (admin or access to both), show all; otherwise filter by sector
       const isFromUserSector = !userSector || m.inventory_items?.sector === userSector;
       return isOwnMovement && isFromUserSector;
     });
@@ -72,6 +78,19 @@ export default function Dashboard() {
   const cozinhaEntradas = cozinhaMovements.filter(m => m.movement_type === 'entrada').length;
   const cozinhaSaidas = cozinhaMovements.filter(m => m.movement_type === 'saida').length;
 
+  // Get sector icon and label
+  const getSectorInfo = () => {
+    if (userSector === 'bar') {
+      return { icon: <Wine className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />, label: 'Itens do Bar' };
+    }
+    if (userSector === 'cozinha') {
+      return { icon: <UtensilsCrossed className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />, label: 'Itens da Cozinha' };
+    }
+    return { icon: <Package className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />, label: 'Total de Itens' };
+  };
+
+  const sectorInfo = getSectorInfo();
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
@@ -82,34 +101,56 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
-          <StatsCard
-            title="Total de Itens"
-            value={items.length}
-            icon={<Package className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />}
-          />
-          <StatsCard
-            title="Bar"
-            value={barItems.length}
-            icon={<Wine className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />}
-            description={`${barItems.filter(i => i.quantity > 0).length} em estoque`}
-          />
-          <StatsCard
-            title="Cozinha"
-            value={cozinhaItems.length}
-            icon={<UtensilsCrossed className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />}
-            description={`${cozinhaItems.filter(i => i.quantity > 0).length} em estoque`}
-          />
-          <StatsCard
-            title="Alertas"
-            value={lowStockItems.length}
-            icon={<AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6 text-warning" />}
-            description="Itens em estoque baixo"
-            trend={lowStockItems.length > 0 ? 'down' : 'neutral'}
-          />
-        </div>
+        {/* Stats Cards */}
+        {isAdmin ? (
+          // Admin view - show all sectors
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+            <StatsCard
+              title="Total de Itens"
+              value={items.length}
+              icon={<Package className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />}
+            />
+            <StatsCard
+              title="Bar"
+              value={barItems.length}
+              icon={<Wine className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />}
+              description={`${barItems.filter(i => i.quantity > 0).length} em estoque`}
+            />
+            <StatsCard
+              title="Cozinha"
+              value={cozinhaItems.length}
+              icon={<UtensilsCrossed className="w-5 h-5 lg:w-6 lg:h-6 text-primary" />}
+              description={`${cozinhaItems.filter(i => i.quantity > 0).length} em estoque`}
+            />
+            <StatsCard
+              title="Alertas"
+              value={allLowStockItems.length}
+              icon={<AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6 text-warning" />}
+              description="Itens em estoque baixo"
+              trend={allLowStockItems.length > 0 ? 'down' : 'neutral'}
+            />
+          </div>
+        ) : (
+          // Employee view - show only their sector
+          <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
+            <StatsCard
+              title={sectorInfo.label}
+              value={sectorItems.length}
+              icon={sectorInfo.icon}
+              description={`${sectorItems.filter(i => i.quantity > 0).length} em estoque`}
+            />
+            <StatsCard
+              title="Alertas"
+              value={lowStockItems.length}
+              icon={<AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6 text-warning" />}
+              description="Estoque baixo"
+              trend={lowStockItems.length > 0 ? 'down' : 'neutral'}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          {/* Movements Section */}
           <div className="lg:col-span-2">
             <div className="glass rounded-xl lg:rounded-2xl p-4 lg:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 lg:mb-6">
@@ -179,6 +220,7 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Alerts Section */}
           <div>
             <div className="glass rounded-xl lg:rounded-2xl p-4 lg:p-6">
               <h2 className="text-lg lg:text-xl font-display font-semibold mb-3 lg:mb-4">Alertas de Estoque</h2>
