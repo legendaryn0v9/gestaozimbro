@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { MovementList } from '@/components/inventory/MovementList';
 import { useStockMovements } from '@/hooks/useInventory';
+import { useRealtimeInventory } from '@/hooks/useRealtimeInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useUserSector } from '@/hooks/useUserSector';
 import { useAuth } from '@/lib/auth';
@@ -14,6 +15,9 @@ export default function Entrada() {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { sector: userSector } = useUserSector();
+  
+  // Enable realtime updates
+  useRealtimeInventory();
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: allMovements = [], isLoading } = useStockMovements();

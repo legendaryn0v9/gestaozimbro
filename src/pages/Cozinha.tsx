@@ -6,6 +6,7 @@ import { AddItemDialog } from '@/components/inventory/AddItemDialog';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { CategoryManagerDialog } from '@/components/inventory/CategoryManagerDialog';
 import { useInventoryItems } from '@/hooks/useInventory';
+import { useRealtimeInventory } from '@/hooks/useRealtimeInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useUserSector } from '@/hooks/useUserSector';
 import { useCategories } from '@/hooks/useCategories';
@@ -42,6 +43,9 @@ export default function Cozinha() {
   const navigate = useNavigate();
   const { canAccessCozinha, isLoading: sectorLoading } = useUserSector();
   const { isAdmin } = useIsAdmin();
+  
+  // Enable realtime updates for inventory
+  useRealtimeInventory();
   
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
