@@ -2,6 +2,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { StatsCard } from '@/components/inventory/StatsCard';
 import { MovementList } from '@/components/inventory/MovementList';
 import { useInventoryItems, useStockMovements } from '@/hooks/useInventory';
+import { useRealtimeInventory } from '@/hooks/useRealtimeInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useUserSector } from '@/hooks/useUserSector';
 import { useAuth } from '@/lib/auth';
@@ -14,6 +15,9 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { sector: userSector } = useUserSector();
+  
+  // Enable realtime updates for inventory
+  useRealtimeInventory();
   
   const { data: items = [] } = useInventoryItems();
   const today = format(new Date(), 'yyyy-MM-dd');
