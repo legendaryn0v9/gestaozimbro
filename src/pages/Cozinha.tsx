@@ -18,11 +18,20 @@ import {
   TrendingUp, 
   TrendingDown, 
   AlertCircle, 
-  FolderPlus,
+  Settings,
   DollarSign,
-  Tag,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as LucideIcons from 'lucide-react';
+
+// Helper to get icon component from string name
+const getIconComponent = (iconName: string | null): React.ComponentType<{ className?: string }> => {
+  if (!iconName) return Package;
+  const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+  const IconComponent = icons[iconName];
+  return IconComponent || Package;
+};
 
 const normalizeCategory = (category: string | null) => {
   if (!category) return null;
@@ -218,9 +227,9 @@ export default function Cozinha() {
                   onClick={() => setCategoryManagerOpen(true)}
                   variant="outline"
                   size="sm"
-                  className="border-primary text-primary hover:bg-primary/10 flex-1 sm:flex-none"
+                  className="flex-1 sm:flex-none"
                 >
-                  <FolderPlus className="w-4 h-4 mr-2" />
+                  <Settings className="w-4 h-4 mr-2" />
                   Categorias
                 </Button>
                 <Button
@@ -262,7 +271,7 @@ export default function Cozinha() {
           </div>
         ) : categories.length === 0 ? (
           <div className="text-center py-16">
-            <FolderPlus className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+            <Settings className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Nenhuma categoria criada</h3>
             <p className="text-muted-foreground mb-6">Crie categorias para organizar os itens da cozinha</p>
             {isAdmin && (
@@ -270,8 +279,8 @@ export default function Cozinha() {
                 onClick={() => setCategoryManagerOpen(true)} 
                 className="bg-gradient-amber text-primary-foreground hover:opacity-90"
               >
-                <FolderPlus className="w-4 h-4 mr-2" />
-                Criar Categorias
+                <Settings className="w-4 h-4 mr-2" />
+                Gerenciar Categorias
               </Button>
             )}
           </div>
@@ -297,14 +306,16 @@ export default function Cozinha() {
               return (
                 <section key={category.id} className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center',
-                        category.gradient || 'from-amber-500 to-orange-600'
-                      )}
-                    >
-                      <Tag className="w-5 h-5 text-white" />
-                    </div>
+                    {(() => {
+                      const Icon = getIconComponent(category.icon);
+                      return (
+                        <div
+                          className={`w-10 h-10 rounded-lg bg-gradient-to-br ${category.gradient || 'from-amber-500 to-orange-600'} flex items-center justify-center`}
+                        >
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                      );
+                    })()}
                     <div className="flex-1">
                       <h2 className="text-xl font-display font-semibold text-foreground">{category.name}</h2>
                       <p className="text-sm text-muted-foreground">
