@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { MovementList } from '@/components/inventory/MovementList';
+import { ReportMovementList } from '@/components/inventory/ReportMovementList';
 import { useStockMovements, useMovementDates, useEmployeeRanking } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ClipboardList, Calendar as CalendarIcon, TrendingUp, TrendingDown, Package, Download, ChevronLeft, ChevronRight, Trophy, Medal, DollarSign } from 'lucide-react';
+import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, subDays, addDays, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -337,7 +337,7 @@ export default function Relatorios() {
               ))}
             </div>
           ) : (
-            <MovementList movements={movements} showDate={false} />
+            <ReportMovementList movements={movements} />
           )}
         </div>
       </div>
