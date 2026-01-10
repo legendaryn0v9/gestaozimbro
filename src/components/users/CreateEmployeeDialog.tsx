@@ -3,23 +3,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { UserPlus, Mail, Lock, User } from 'lucide-react';
+import { UserPlus, Lock, User, Phone, Building2 } from 'lucide-react';
 import { z } from 'zod';
 
 const createEmployeeSchema = z.object({
-  email: z.string().trim().email({ message: 'Email inválido' }),
+  phone: z.string().trim().min(8, { message: 'Telefone deve ter pelo menos 8 caracteres' }),
   password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
   fullName: z.string().trim().min(2, { message: 'Nome deve ter pelo menos 2 caracteres' }),
+  sector: z.enum(['bar', 'cozinha'], { message: 'Selecione um setor' }),
 });
 
 export function CreateEmployeeDialog() {
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [sector, setSector] = useState<'bar' | 'cozinha' | ''>('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -27,9 +30,10 @@ export function CreateEmployeeDialog() {
   const queryClient = useQueryClient();
 
   const resetForm = () => {
-    setEmail('');
+    setPhone('');
     setPassword('');
     setFullName('');
+    setSector('');
     setErrors({});
   };
 
@@ -37,7 +41,7 @@ export function CreateEmployeeDialog() {
     e.preventDefault();
     setErrors({});
 
-    const result = createEmployeeSchema.safeParse({ email, password, fullName });
+    const result = createEmployeeSchema.safeParse({ phone, password, fullName, sector });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -65,9 +69,10 @@ export function CreateEmployeeDialog() {
 
       const { data, error } = await supabase.functions.invoke('create-employee', {
         body: {
-          email,
+          phone,
           password,
           fullName,
+          sector,
         },
       });
 
@@ -120,13 +125,13 @@ export function CreateEmployeeDialog() {
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="create-fullName">Nome Completo</Label>
+            <Label htmlFor="create-fullName">Nome do Funcionário</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="create-fullName"
                 type="text"
-                placeholder="Nome do funcionário"
+                placeholder="Nome completo"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="pl-10"
@@ -138,25 +143,25 @@ export function CreateEmployeeDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="create-email">Email</Label>
+            <Label htmlFor="create-phone">Telefone do Funcionário</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                id="create-email"
-                type="email"
-                placeholder="email@exemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="create-phone"
+                type="tel"
+                placeholder="(00) 00000-0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="pl-10"
               />
             </div>
-            {errors.email && (
-              <p className="text-destructive text-sm">{errors.email}</p>
+            {errors.phone && (
+              <p className="text-destructive text-sm">{errors.phone}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="create-password">Senha</Label>
+            <Label htmlFor="create-password">Senha do Funcionário</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -170,6 +175,35 @@ export function CreateEmployeeDialog() {
             </div>
             {errors.password && (
               <p className="text-destructive text-sm">{errors.password}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="create-sector">Setor</Label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+              <Select value={sector} onValueChange={(value: 'bar' | 'cozinha') => setSector(value)}>
+                <SelectTrigger className="pl-10">
+                  <SelectValue placeholder="Selecione o setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bar">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      Bar
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cozinha">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Cozinha
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {errors.sector && (
+              <p className="text-destructive text-sm">{errors.sector}</p>
             )}
           </div>
 

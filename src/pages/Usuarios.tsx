@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, useDeleteUser, AppRole } from '@/hooks/useUserRoles';
+import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, useDeleteUser, useUpdateUserSector, AppRole } from '@/hooks/useUserRoles';
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Shield, UserCheck, Crown, Trash2 } from 'lucide-react';
+import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
@@ -19,6 +19,7 @@ export default function Usuarios() {
   const { isAdmin, isLoading: isLoadingRole } = useIsAdmin();
   const { data: users = [], isLoading } = useAllUsersWithRoles();
   const updateRole = useUpdateUserRole();
+  const updateSector = useUpdateUserSector();
   const deleteUser = useDeleteUser();
   const queryClient = useQueryClient();
 
@@ -62,6 +63,10 @@ export default function Usuarios() {
     updateRole.mutate({ userId, newRole });
   };
 
+  const handleSectorChange = (userId: string, sector: 'bar' | 'cozinha' | null) => {
+    updateSector.mutate({ userId, sector });
+  };
+
   const handleDeleteUser = (userId: string) => {
     deleteUser.mutate(userId);
   };
@@ -70,23 +75,29 @@ export default function Usuarios() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const getSectorIcon = (sector: 'bar' | 'cozinha' | null) => {
+    if (sector === 'bar') return <Wine className="w-4 h-4 text-amber-500" />;
+    if (sector === 'cozinha') return <UtensilsCrossed className="w-4 h-4 text-emerald-500" />;
+    return null;
+  };
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
               <Users className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-display font-bold text-gradient">Gerenciar Usuários</h1>
-              <p className="text-muted-foreground">Gerencie os cargos e fotos dos funcionários</p>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Gerenciar Usuários</h1>
+              <p className="text-sm text-muted-foreground">Gerencie os cargos, setores e fotos dos funcionários</p>
             </div>
           </div>
           <CreateEmployeeDialog />
         </div>
 
-        <div className="glass rounded-xl p-6">
+        <div className="glass rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-6">
             <Shield className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">Funcionários ({users.length})</h2>
@@ -107,7 +118,7 @@ export default function Usuarios() {
               {users.map((u) => (
                 <div
                   key={u.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border"
+                  className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 border border-border"
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -135,23 +146,56 @@ export default function Usuarios() {
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{u.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{u.email}</p>
+                      {u.phone && (
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {u.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {u.id === user?.id ? (
                       <Badge variant="outline" className="border-primary text-primary">
                         Você
                       </Badge>
                     ) : (
                       <>
+                        {/* Sector Select - Only for funcionarios */}
+                        {u.role === 'funcionario' && (
+                          <Select
+                            value={u.sector || 'none'}
+                            onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : value as 'bar' | 'cozinha')}
+                            disabled={updateSector.isPending}
+                          >
+                            <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
+                              <SelectValue placeholder="Setor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bar">
+                                <div className="flex items-center gap-2">
+                                  <Wine className="w-4 h-4 text-amber-500" />
+                                  Bar
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="cozinha">
+                                <div className="flex items-center gap-2">
+                                  <UtensilsCrossed className="w-4 h-4 text-emerald-500" />
+                                  Cozinha
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {/* Role Select */}
                         <Select
                           value={u.role}
                           onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
                           disabled={updateRole.isPending}
                         >
-                          <SelectTrigger className="w-36 bg-input border-border">
+                          <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -202,13 +246,26 @@ export default function Usuarios() {
                       </>
                     )}
                     
-                    <Badge className={
-                      u.role === 'admin' 
-                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
-                        : 'bg-blue-500/20 text-blue-500 border-blue-500/50'
-                    }>
-                      {u.role === 'admin' ? 'Gestor' : 'Funcionário'}
-                    </Badge>
+                    {/* Badges */}
+                    <div className="flex items-center gap-2">
+                      {u.sector && u.role === 'funcionario' && (
+                        <Badge className={
+                          u.sector === 'bar' 
+                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
+                            : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/50'
+                        }>
+                          {getSectorIcon(u.sector)}
+                          <span className="ml-1">{u.sector === 'bar' ? 'Bar' : 'Cozinha'}</span>
+                        </Badge>
+                      )}
+                      <Badge className={
+                        u.role === 'admin' 
+                          ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
+                          : 'bg-blue-500/20 text-blue-500 border-blue-500/50'
+                      }>
+                        {u.role === 'admin' ? 'Gestor' : 'Funcionário'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               ))}

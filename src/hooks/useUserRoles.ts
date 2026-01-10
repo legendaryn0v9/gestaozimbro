@@ -17,6 +17,8 @@ export interface UserWithRole {
   email: string;
   full_name: string;
   avatar_url: string | null;
+  phone: string | null;
+  sector: 'bar' | 'cozinha' | null;
   role: AppRole;
   role_id: string;
 }
@@ -56,7 +58,7 @@ export function useAllUsersWithRoles() {
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, full_name, avatar_url');
+        .select('id, email, full_name, avatar_url, phone, sector');
 
       if (profilesError) throw profilesError;
 
@@ -73,6 +75,8 @@ export function useAllUsersWithRoles() {
         email: profile.email,
         full_name: profile.full_name,
         avatar_url: profile.avatar_url,
+        phone: profile.phone,
+        sector: profile.sector as 'bar' | 'cozinha' | null,
         role: rolesMap.get(profile.id)?.role ?? 'funcionario',
         role_id: rolesMap.get(profile.id)?.id ?? '',
       })) as UserWithRole[];
@@ -117,6 +121,37 @@ export function useUpdateUserRole() {
     onError: (error) => {
       toast({
         title: 'Erro ao atualizar cargo',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useUpdateUserSector() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, sector }: { userId: string; sector: 'bar' | 'cozinha' | null }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ sector })
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['user-sector'] });
+      toast({
+        title: 'Setor atualizado!',
+        description: 'O setor do funcionário foi alterado com sucesso.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro ao atualizar setor',
         description: error.message,
         variant: 'destructive',
       });
