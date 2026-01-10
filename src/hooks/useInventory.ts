@@ -282,7 +282,6 @@ export function useDeleteItem() {
 
 export function useAddMovement() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { toast } = useToast();
 
   return useMutation({
@@ -297,50 +296,28 @@ export function useAddMovement() {
       quantity: number;
       notes?: string;
     }) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
+      // Use the atomic database function to record movement and update quantity
+      const { data, error } = await supabase.rpc('record_stock_movement', {
+        _item_id: itemId,
+        _movement_type: movementType,
+        _quantity: quantity,
+        _notes: notes || null,
+      });
 
-      // Get current item quantity
-      const { data: item, error: itemError } = await supabase
-        .from('inventory_items')
-        .select('quantity')
-        .eq('id', itemId)
-        .single();
-
-      if (itemError) throw itemError;
-
-      // Calculate new quantity
-      const currentQty = Number(item.quantity);
-      const movementQty = Number(quantity);
-      const newQuantity = movementType === 'entrada'
-        ? currentQty + movementQty
-        : currentQty - movementQty;
-
-      if (newQuantity < 0) {
-        throw new Error('Quantidade insuficiente em estoque');
+      if (error) {
+        // Handle specific error messages from the database function
+        if (error.message.includes('Estoque insuficiente')) {
+          throw new Error('Quantidade insuficiente em estoque');
+        }
+        if (error.message.includes('Item não encontrado')) {
+          throw new Error('Item não encontrado');
+        }
+        if (error.message.includes('Usuário não autenticado')) {
+          throw new Error('Usuário não autenticado');
+        }
+        throw error;
       }
-
-      // Update item quantity
-      const { error: updateError } = await supabase
-        .from('inventory_items')
-        .update({ quantity: newQuantity })
-        .eq('id', itemId);
-
-      if (updateError) throw updateError;
-
-      // Insert movement
-      const { data, error } = await supabase
-        .from('stock_movements')
-        .insert({
-          item_id: itemId,
-          user_id: user.id,
-          movement_type: movementType,
-          quantity: movementQty,
-          notes: notes || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      
       return data;
     },
     onSuccess: (_, variables) => {
