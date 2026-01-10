@@ -70,149 +70,85 @@ export default function Relatorios() {
 
     const dateFormatted = format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     
+    // Sort movements by time
+    const sortedMovements = [...movements].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
     const lines: string[] = [
-      `RELATÓRIO DE MOVIMENTAÇÕES - ${dateFormatted.toUpperCase()}`,
-      '',
-      '═══════════════════════════════════════════════════════════════════',
-      '',
-      'RESUMO FINANCEIRO DO DIA',
-      '───────────────────────────────────────────────────────────────────',
-      `Valor Total de Entradas (Investido): R$ ${valorTotalEntradas.toFixed(2).replace('.', ',')}`,
-      `Valor Total de Saídas (Vendido): R$ ${valorTotalSaidas.toFixed(2).replace('.', ',')}`,
-      `Diferença no Caixa: R$ ${(valorTotalEntradas - valorTotalSaidas).toFixed(2).replace('.', ',')}`,
-      '',
-      '═══════════════════════════════════════════════════════════════════',
-      '',
-      'RESUMO DE QUANTIDADES',
-      '───────────────────────────────────────────────────────────────────',
-      `Total de Movimentações: ${movements.length}`,
-      `Total de Entradas: ${totalEntradas} itens (${entradas.length} registros)`,
-      `Total de Saídas: ${totalSaidas} itens (${saidas.length} registros)`,
+      `╔═══════════════════════════════════════════════════════════════════════════════╗`,
+      `║                    RELATÓRIO DE MOVIMENTAÇÕES DO DIA                          ║`,
+      `║                    ${dateFormatted.toUpperCase().padStart(30).padEnd(49)}║`,
+      `╚═══════════════════════════════════════════════════════════════════════════════╝`,
       '',
     ];
 
-    // Add entries section
-    if (entradas.length > 0) {
-      lines.push('═══════════════════════════════════════════════════════════════════');
-      lines.push('');
-      lines.push('ENTRADAS NO ESTOQUE');
-      lines.push('───────────────────────────────────────────────────────────────────');
-      lines.push('');
-      lines.push('Hora,Produto,Quantidade,Unidade,Valor Unit.,Valor Total,Responsável,Observações');
-      
-      entradas.forEach(m => {
-        const price = Number(m.inventory_items?.price) || 0;
-        const valorTotal = price * Number(m.quantity);
-        lines.push([
-          format(new Date(m.created_at), "HH:mm"),
-          `"${m.inventory_items?.name || ''}"`,
-          m.quantity.toString(),
-          m.inventory_items?.unit || '',
-          `R$ ${price.toFixed(2).replace('.', ',')}`,
-          `R$ ${valorTotal.toFixed(2).replace('.', ',')}`,
-          `"${m.profiles?.full_name || ''}"`,
-          `"${m.notes || '-'}"`
-        ].join(','));
-      });
-      
-      lines.push('');
-      lines.push(`SUBTOTAL ENTRADAS: R$ ${valorTotalEntradas.toFixed(2).replace('.', ',')}`);
+    // Financial summary only for admin
+    if (isAdmin) {
+      lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+      lines.push('│                           RESUMO FINANCEIRO                                  │');
+      lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+      lines.push(`│  💰 Total de Entradas (Investido):    R$ ${valorTotalEntradas.toFixed(2).replace('.', ',').padEnd(35)}│`);
+      lines.push(`│  💸 Total de Saídas (Vendido):        R$ ${valorTotalSaidas.toFixed(2).replace('.', ',').padEnd(35)}│`);
+      lines.push(`│  📊 Balanço do Dia:                   R$ ${(valorTotalSaidas - valorTotalEntradas).toFixed(2).replace('.', ',').padEnd(35)}│`);
+      lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
       lines.push('');
     }
 
-    // Add exits section
-    if (saidas.length > 0) {
-      lines.push('═══════════════════════════════════════════════════════════════════');
-      lines.push('');
-      lines.push('SAÍDAS DO ESTOQUE');
-      lines.push('───────────────────────────────────────────────────────────────────');
-      lines.push('');
-      lines.push('Hora,Produto,Quantidade,Unidade,Valor Unit.,Valor Total,Responsável,Observações');
-      
-      saidas.forEach(m => {
-        const price = Number(m.inventory_items?.price) || 0;
-        const valorTotal = price * Number(m.quantity);
-        lines.push([
-          format(new Date(m.created_at), "HH:mm"),
-          `"${m.inventory_items?.name || ''}"`,
-          m.quantity.toString(),
-          m.inventory_items?.unit || '',
-          `R$ ${price.toFixed(2).replace('.', ',')}`,
-          `R$ ${valorTotal.toFixed(2).replace('.', ',')}`,
-          `"${m.profiles?.full_name || ''}"`,
-          `"${m.notes || '-'}"`
-        ].join(','));
-      });
-      
-      lines.push('');
-      lines.push(`SUBTOTAL SAÍDAS: R$ ${valorTotalSaidas.toFixed(2).replace('.', ',')}`);
-      lines.push('');
+    // Quantity summary
+    lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+    lines.push('│                           RESUMO DE QUANTIDADES                              │');
+    lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+    lines.push(`│  📦 Total de Movimentações:    ${movements.length.toString().padEnd(46)}│`);
+    lines.push(`│  ⬆️  Entradas:                  ${totalEntradas} itens (${entradas.length} registros)`.padEnd(79) + '│');
+    lines.push(`│  ⬇️  Saídas:                    ${totalSaidas} itens (${saidas.length} registros)`.padEnd(79) + '│');
+    lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+    lines.push('');
+
+    // Detailed movements table
+    lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+    lines.push('│                        MOVIMENTAÇÕES DETALHADAS                              │');
+    lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+    lines.push('');
+    
+    if (isAdmin) {
+      lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
+    } else {
+      lines.push('Horário,Tipo,Produto,Quantidade,Responsável,Observações');
     }
+    lines.push('');
 
-    // Add product summary
-    lines.push('═══════════════════════════════════════════════════════════════════');
-    lines.push('');
-    lines.push('RESUMO POR PRODUTO');
-    lines.push('───────────────────────────────────────────────────────────────────');
-    lines.push('');
-    lines.push('Produto,Entradas (Qtd),Entradas (R$),Saídas (Qtd),Saídas (R$),Saldo (Qtd)');
-    
-    Object.values(groupedByProduct).forEach((product: any) => {
-      const entradasQtd = product.entradas.reduce((s: number, m: any) => s + Number(m.quantity), 0);
-      const saidasQtd = product.saidas.reduce((s: number, m: any) => s + Number(m.quantity), 0);
-      const entradasValor = entradasQtd * product.price;
-      const saidasValor = saidasQtd * product.price;
-      const saldo = entradasQtd - saidasQtd;
-      
-      lines.push([
-        `"${product.name}"`,
-        `+${entradasQtd} ${product.unit}`,
-        `R$ ${entradasValor.toFixed(2).replace('.', ',')}`,
-        `-${saidasQtd} ${product.unit}`,
-        `R$ ${saidasValor.toFixed(2).replace('.', ',')}`,
-        `${saldo >= 0 ? '+' : ''}${saldo} ${product.unit}`
-      ].join(','));
-    });
-
-    // Add responsible employees summary
-    lines.push('');
-    lines.push('═══════════════════════════════════════════════════════════════════');
-    lines.push('');
-    lines.push('MOVIMENTAÇÕES POR FUNCIONÁRIO');
-    lines.push('───────────────────────────────────────────────────────────────────');
-    lines.push('');
-    
-    const byEmployee = movements.reduce((acc, m) => {
-      const name = m.profiles?.full_name || 'Desconhecido';
-      if (!acc[name]) {
-        acc[name] = { entradas: 0, saidas: 0, valorEntradas: 0, valorSaidas: 0 };
-      }
+    sortedMovements.forEach(m => {
+      const isEntrada = m.movement_type === 'entrada';
+      const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
       const price = Number(m.inventory_items?.price) || 0;
-      const valor = price * Number(m.quantity);
-      if (m.movement_type === 'entrada') {
-        acc[name].entradas += Number(m.quantity);
-        acc[name].valorEntradas += valor;
+      
+      if (isAdmin) {
+        lines.push([
+          format(new Date(m.created_at), "HH:mm"),
+          tipo,
+          `"${m.inventory_items?.name || ''}"`,
+          `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+          `R$ ${price.toFixed(2).replace('.', ',')}`,
+          `"${m.profiles?.full_name || ''}"`,
+          `"${m.notes || '-'}"`
+        ].join(','));
       } else {
-        acc[name].saidas += Number(m.quantity);
-        acc[name].valorSaidas += valor;
+        lines.push([
+          format(new Date(m.created_at), "HH:mm"),
+          tipo,
+          `"${m.inventory_items?.name || ''}"`,
+          `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+          `"${m.profiles?.full_name || ''}"`,
+          `"${m.notes || '-'}"`
+        ].join(','));
       }
-      return acc;
-    }, {} as Record<string, any>);
-
-    lines.push('Funcionário,Entradas (Qtd),Entradas (R$),Saídas (Qtd),Saídas (R$)');
-    Object.entries(byEmployee).forEach(([name, data]: [string, any]) => {
-      lines.push([
-        `"${name}"`,
-        `+${data.entradas}`,
-        `R$ ${data.valorEntradas.toFixed(2).replace('.', ',')}`,
-        `-${data.saidas}`,
-        `R$ ${data.valorSaidas.toFixed(2).replace('.', ',')}`
-      ].join(','));
     });
 
     lines.push('');
-    lines.push('═══════════════════════════════════════════════════════════════════');
-    lines.push(`Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`);
+    lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+    lines.push('');
+    lines.push(`📅 Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`);
 
     const csvContent = lines.join('\n');
 
