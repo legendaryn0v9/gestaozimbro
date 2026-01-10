@@ -321,30 +321,6 @@ export default function Relatorios() {
             </div>
           </div>
 
-          {/* Recent Days with Movements */}
-          {recentDatesWithMovements.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">Dias com movimento:</span>
-                <div className="flex gap-1.5 flex-wrap">
-                  {recentDatesWithMovements.map((date) => (
-                    <Button
-                      key={date.toISOString()}
-                      variant={isSameDay(selectedDate, date) ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedDate(date)}
-                      className={cn(
-                        'h-8 px-3 text-xs',
-                        isSameDay(selectedDate, date) && 'bg-gradient-amber text-primary-foreground'
-                      )}
-                    >
-                      {format(date, "dd/MM", { locale: ptBR })}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
 
