@@ -152,7 +152,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
               {item.quantity} {unitLabels[item.unit]}
             </span>
           </div>
-          {item.price > 0 && (
+          {isAdmin && item.price > 0 && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-sm">Valor unitário</span>
               <span className="font-medium text-foreground">
@@ -160,7 +160,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
               </span>
             </div>
           )}
-          {item.price > 0 && item.quantity > 0 && (
+          {isAdmin && item.price > 0 && item.quantity > 0 && (
             <div className="flex items-center justify-between bg-primary/10 rounded-lg p-2 -mx-1">
               <span className="text-sm text-primary font-medium">Total em estoque</span>
               <span className="font-bold text-primary">

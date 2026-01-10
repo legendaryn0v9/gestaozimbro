@@ -140,18 +140,20 @@ export default function Bar() {
               </div>
             </div>
 
-            {/* Total Value Card */}
-            <div className="glass rounded-xl p-3 sm:p-4 flex items-center gap-3 border border-primary/20">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-primary" />
+            {/* Total Value Card - Only for Admin */}
+            {isAdmin && (
+              <div className="glass rounded-xl p-3 sm:p-4 flex items-center gap-3 border border-primary/20">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Caixa Total do Bar</p>
+                  <p className="text-lg sm:text-xl font-bold text-primary">
+                    R$ {totalInventoryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Caixa Total do Bar</p>
-                <p className="text-lg sm:text-xl font-bold text-primary">
-                  R$ {totalInventoryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Action Buttons */}
