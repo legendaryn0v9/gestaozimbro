@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Wine, Phone, Lock, ArrowRight } from 'lucide-react';
+import { Phone, Lock, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
+import logoImg from '@/assets/logo.png';
 
 const loginSchema = z.object({
   phone: z.string().trim().min(8, { message: 'Telefone deve ter pelo menos 8 caracteres' }),
@@ -88,10 +89,12 @@ export default function Auth() {
       <div className="relative w-full max-w-md animate-scale-in">
         <div className="glass rounded-2xl p-8 glow-amber">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-amber flex items-center justify-center mb-4">
-              <Wine className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-display font-bold text-gradient">Bar Estoque</h1>
+            <img 
+              src={logoImg} 
+              alt="Zimbro Logo" 
+              className="w-24 h-auto mb-4"
+            />
+            <h1 className="text-3xl font-display font-bold text-gradient">Zimbro</h1>
             <p className="text-muted-foreground mt-2">Entre para gerenciar o estoque</p>
           </div>
 

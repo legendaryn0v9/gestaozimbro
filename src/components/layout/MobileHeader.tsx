@@ -1,8 +1,9 @@
-import { Menu, Package } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
 import { useState } from 'react';
+import logoImg from '@/assets/logo.png';
 
 export function MobileHeader() {
   const [open, setOpen] = useState(false);
@@ -22,10 +23,12 @@ export function MobileHeader() {
         </Sheet>
         
         <div className="flex items-center gap-2 ml-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-amber flex items-center justify-center">
-            <Package className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <h1 className="font-display font-bold text-sidebar-foreground">Bar Estoque</h1>
+          <img 
+            src={logoImg} 
+            alt="Zimbro Logo" 
+            className="w-8 h-auto"
+          />
+          <h1 className="font-display font-bold text-sidebar-foreground">Zimbro</h1>
         </div>
       </div>
     </header>

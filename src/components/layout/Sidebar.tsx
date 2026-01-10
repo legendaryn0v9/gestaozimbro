@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
 import { 
   Wine, 
-  Package, 
   UtensilsCrossed, 
   ClipboardList, 
   TrendingUp, 
@@ -19,6 +18,7 @@ import { useUserSector } from '@/hooks/useUserSector';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import logoImg from '@/assets/logo.png';
 
 const baseMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/', sector: null },
@@ -70,14 +70,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     <aside className="h-full lg:fixed lg:left-0 lg:top-0 lg:h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-6 border-b border-sidebar-border hidden lg:block">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-amber flex items-center justify-center">
-            <Package className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img 
+            src={logoImg} 
+            alt="Zimbro Logo" 
+            className="w-10 h-auto"
+          />
           <div>
             <h1 className="font-display font-bold text-lg text-sidebar-foreground">
-              Bar Estoque
+              Zimbro
             </h1>
-            <p className="text-xs text-muted-foreground">Gerenciamento</p>
+            <p className="text-xs text-muted-foreground">Estoque</p>
           </div>
         </div>
       </div>
