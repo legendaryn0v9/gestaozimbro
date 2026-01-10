@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { InventoryItem, useUpdateItem, UnitType } from '@/hooks/useInventory';
+import { useCategories } from '@/hooks/useCategories';
 import { Pencil, Save, ImagePlus, X } from 'lucide-react';
 
 interface EditItemDialogProps {
@@ -21,11 +22,31 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
   const [quantity, setQuantity] = useState(String(item.quantity));
   const [minQuantity, setMinQuantity] = useState(item.min_quantity ? String(item.min_quantity) : '');
   const [price, setPrice] = useState(item.price ? String(item.price) : '');
-  const [category, setCategory] = useState(item.category || '');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
   const [imagePreview, setImagePreview] = useState<string | null>(item.image_url);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateItem = useUpdateItem();
+  
+  // Fetch categories for the item's sector
+  const { data: categories = [] } = useCategories(item.sector);
+
+  // Parse current category to find category and subcategory
+  const parseCategory = (categoryString: string | null) => {
+    if (!categoryString) return { category: null, subcategory: null };
+    const parts = categoryString.split(' - ');
+    if (parts.length === 2) {
+      return { category: parts[0].trim(), subcategory: parts[1].trim() };
+    }
+    return { category: categoryString.trim(), subcategory: null };
+  };
+
+  // Get subcategories for selected category
+  const subcategories = useMemo(() => {
+    const category = categories.find(c => c.id === selectedCategoryId);
+    return category?.subcategories || [];
+  }, [categories, selectedCategoryId]);
 
   // Reset form when item changes
   useEffect(() => {
@@ -35,9 +56,32 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
     setQuantity(String(item.quantity));
     setMinQuantity(item.min_quantity ? String(item.min_quantity) : '');
     setPrice(item.price ? String(item.price) : '');
-    setCategory(item.category || '');
     setImagePreview(item.image_url);
-  }, [item]);
+    
+    // Parse and set category/subcategory
+    const { category, subcategory } = parseCategory(item.category);
+    
+    // Find category by name
+    const foundCategory = categories.find(c => c.name === category);
+    if (foundCategory) {
+      setSelectedCategoryId(foundCategory.id);
+      
+      // Find subcategory by name
+      if (subcategory) {
+        const foundSubcategory = foundCategory.subcategories.find(s => s.name === subcategory);
+        if (foundSubcategory) {
+          setSelectedSubcategoryId(foundSubcategory.id);
+        } else {
+          setSelectedSubcategoryId('');
+        }
+      } else {
+        setSelectedSubcategoryId('');
+      }
+    } else {
+      setSelectedCategoryId('');
+      setSelectedSubcategoryId('');
+    }
+  }, [item, categories]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,8 +101,25 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
     }
   };
 
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    setSelectedSubcategoryId(''); // Reset subcategory when category changes
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Build category string
+    let categoryString: string | null = null;
+    const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+    if (selectedCategory) {
+      const selectedSubcategory = selectedCategory.subcategories.find(s => s.id === selectedSubcategoryId);
+      if (selectedSubcategory) {
+        categoryString = selectedSubcategory.name;
+      } else {
+        categoryString = selectedCategory.name;
+      }
+    }
     
     updateItem.mutate(
       {
@@ -69,7 +130,7 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
         quantity: Number(quantity),
         min_quantity: minQuantity ? Number(minQuantity) : null,
         price: price ? Number(price) : 0,
-        category: category || null,
+        category: categoryString,
         image_url: imagePreview,
       },
       {
@@ -168,15 +229,42 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
             />
           </div>
 
+          {/* Category Selection */}
           <div className="space-y-2">
-            <Label htmlFor="edit-category">Categoria</Label>
-            <Input
-              id="edit-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="bg-input border-border"
-            />
+            <Label>Categoria</Label>
+            <Select value={selectedCategoryId} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="bg-input border-border">
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* Subcategory Selection */}
+          {subcategories.length > 0 && (
+            <div className="space-y-2">
+              <Label>Subcategoria</Label>
+              <Select value={selectedSubcategoryId} onValueChange={setSelectedSubcategoryId}>
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue placeholder="Selecione uma subcategoria (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma (direto na categoria)</SelectItem>
+                  {subcategories.map((sub) => (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

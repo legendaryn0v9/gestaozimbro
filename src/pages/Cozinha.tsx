@@ -54,6 +54,7 @@ export default function Cozinha() {
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string | null>>({});
   // Redirect if user doesn't have access to cozinha
   useEffect(() => {
     if (!sectorLoading && !canAccessCozinha && !isAdmin) {
@@ -144,6 +145,13 @@ export default function Cozinha() {
   const handleItemClick = (itemId: string) => {
     setSelectedItemId(itemId);
     setSaidaDialogOpen(true);
+  };
+
+  const handleSubcategoryChange = (categoryId: string, subcategoryName: string | null) => {
+    setSelectedSubcategories(prev => ({
+      ...prev,
+      [categoryId]: prev[categoryId] === subcategoryName ? null : subcategoryName,
+    }));
   };
 
 
@@ -360,45 +368,66 @@ export default function Cozinha() {
                     </div>
                   )}
 
-                  {/* Subcategories */}
-                  {category.subcategories.map((sub) => {
-                    const subItems = categoryData.subcategories[sub.name] || [];
-                    
-                    return (
-                      <div key={sub.id} className="space-y-3">
-                        {/* Subcategory Header */}
-                        <div className="flex items-center gap-2 pl-2 border-l-4 border-primary/30">
-                          <h3 className="text-lg font-semibold text-foreground/90">{sub.name}</h3>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                            {subItems.length} {subItems.length === 1 ? 'item' : 'itens'}
-                          </span>
-                          {isAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openAddDialog(sub.name)}
-                              className="ml-auto h-7 text-xs text-primary hover:bg-primary/10"
-                            >
-                              <Plus className="w-3 h-3 mr-1" />
-                              Adicionar
-                            </Button>
-                          )}
-                        </div>
+                  {/* Subcategory Tabs */}
+                  {category.subcategories.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {category.subcategories.map((sub) => {
+                        const subItems = categoryData.subcategories[sub.name] || [];
+                        const isSelected = selectedSubcategories[category.id] === sub.name;
+                        
+                        return (
+                          <button
+                            key={sub.id}
+                            onClick={() => handleSubcategoryChange(category.id, sub.name)}
+                            className={cn(
+                              "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                              isSelected
+                                ? `bg-gradient-to-r ${category.gradient || 'from-amber-500 to-orange-600'} text-white shadow-md`
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            )}
+                          >
+                            {sub.name}
+                            <span className="ml-1.5 text-xs opacity-75">({subItems.length})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                        {subItems.length === 0 ? (
-                          <div className="glass rounded-lg p-4 text-center border-dashed border border-border ml-4">
-                            <p className="text-sm text-muted-foreground">Nenhum item em {sub.name}</p>
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 ml-4">
-                            {subItems.map((item) => (
-                              <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
-                            ))}
-                          </div>
-                        )}
+                  {/* Items Display */}
+                  {(() => {
+                    const selectedSub = selectedSubcategories[category.id];
+                    
+                    // If a subcategory is selected, show only its items
+                    if (selectedSub) {
+                      const subItems = categoryData.subcategories[selectedSub] || [];
+                      return subItems.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+                          {subItems.map((item) => (
+                            <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="glass rounded-xl p-6 text-center border-dashed border-2 border-border">
+                          <p className="text-muted-foreground">Nenhum item em {selectedSub}</p>
+                        </div>
+                      );
+                    }
+                    
+                    // Show all items (direct + all subcategories)
+                    const allItems = [
+                      ...categoryData.categoryItems,
+                      ...Object.values(categoryData.subcategories).flat(),
+                    ];
+                    
+                    return allItems.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+                        {allItems.map((item) => (
+                          <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
+                        ))}
                       </div>
-                    );
-                  })}
+                    ) : null;
+                  })()}
 
                   {totalCategoryItems === 0 && (
                     <div className="glass rounded-xl p-6 text-center border-dashed border-2 border-border">
