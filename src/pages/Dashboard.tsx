@@ -1,21 +1,14 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatsCard } from '@/components/inventory/StatsCard';
 import { MovementList } from '@/components/inventory/MovementList';
-import { MovementsChart } from '@/components/dashboard/MovementsChart';
 import { useInventoryItems, useStockMovements } from '@/hooks/useInventory';
-import { useTotalStockValue } from '@/hooks/useWeeklyMovements';
-import { useLowStockNotifications } from '@/hooks/useLowStockNotifications';
-import { Package, Wine, UtensilsCrossed, AlertTriangle, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Package, Wine, UtensilsCrossed, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Dashboard() {
   const { data: items = [] } = useInventoryItems();
-  const { data: stockValue } = useTotalStockValue();
   const today = format(new Date(), 'yyyy-MM-dd');
   const { data: movements = [] } = useStockMovements(today);
-
-  // Enable real-time low stock notifications
-  useLowStockNotifications();
 
   const barItems = items.filter(i => i.sector === 'bar');
   const cozinhaItems = items.filter(i => i.sector === 'cozinha');
@@ -23,13 +16,6 @@ export default function Dashboard() {
   
   const todayEntradas = movements.filter(m => m.movement_type === 'entrada').length;
   const todaySaidas = movements.filter(m => m.movement_type === 'saida').length;
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   return (
     <MainLayout>
@@ -41,13 +27,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 mb-6 lg:mb-8">
-          <StatsCard
-            title="Valor do Estoque"
-            value={formatCurrency(stockValue?.totalValue || 0)}
-            icon={<DollarSign className="w-5 h-5 lg:w-6 lg:h-6 text-success" />}
-            description={`${stockValue?.totalItems || 0} unidades`}
-          />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
           <StatsCard
             title="Total de Itens"
             value={items.length}
@@ -72,11 +52,6 @@ export default function Dashboard() {
             description="Itens em estoque baixo"
             trend={lowStockItems.length > 0 ? 'down' : 'neutral'}
           />
-        </div>
-
-        {/* Chart Section */}
-        <div className="mb-6 lg:mb-8">
-          <MovementsChart />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
