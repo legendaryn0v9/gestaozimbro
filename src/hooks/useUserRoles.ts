@@ -123,3 +123,42 @@ export function useUpdateUserRole() {
     },
   });
 }
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Delete user role first
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (roleError) throw roleError;
+
+      // Delete profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+      toast({
+        title: 'Usuário excluído!',
+        description: 'O usuário foi removido do sistema.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro ao excluir usuário',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
