@@ -91,11 +91,9 @@ export default function Auth() {
           <div className="flex flex-col items-center mb-8">
             <img 
               src={logoImg} 
-              alt="Zimbro Logo" 
-              className="w-24 h-auto mb-4"
+              alt="Logo" 
+              className="w-28 h-auto"
             />
-            <h1 className="text-3xl font-display font-bold text-gradient">Zimbro</h1>
-            <p className="text-muted-foreground mt-2">Entre para gerenciar o estoque</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -151,9 +149,6 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground text-sm">Solicite acesso ao seu gestor</p>
-          </div>
         </div>
       </div>
     </div>

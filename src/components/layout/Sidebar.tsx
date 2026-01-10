@@ -69,18 +69,12 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="h-full lg:fixed lg:left-0 lg:top-0 lg:h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-6 border-b border-sidebar-border hidden lg:block">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center">
           <img 
             src={logoImg} 
-            alt="Zimbro Logo" 
-            className="w-10 h-auto"
+            alt="Logo" 
+            className="w-12 h-auto"
           />
-          <div>
-            <h1 className="font-display font-bold text-lg text-sidebar-foreground">
-              Zimbro
-            </h1>
-            <p className="text-xs text-muted-foreground">Estoque</p>
-          </div>
         </div>
       </div>
 
