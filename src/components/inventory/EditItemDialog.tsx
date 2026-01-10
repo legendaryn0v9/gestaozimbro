@@ -250,12 +250,12 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
           {subcategories.length > 0 && (
             <div className="space-y-2">
               <Label>Subcategoria</Label>
-              <Select value={selectedSubcategoryId} onValueChange={setSelectedSubcategoryId}>
+              <Select value={selectedSubcategoryId || "__none__"} onValueChange={(v) => setSelectedSubcategoryId(v === "__none__" ? "" : v)}>
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Selecione uma subcategoria (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (direto na categoria)</SelectItem>
+                  <SelectItem value="__none__">Nenhuma (direto na categoria)</SelectItem>
                   {subcategories.map((sub) => (
                     <SelectItem key={sub.id} value={sub.id}>
                       {sub.name}
