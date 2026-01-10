@@ -180,16 +180,14 @@ export default function Relatorios() {
             </div>
           </div>
 
-          {isAdmin && (
-            <Button
-              onClick={handleDownloadCSV}
-              disabled={movements.length === 0}
-              className="bg-gradient-amber text-primary-foreground hover:opacity-90"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Baixar Relatório
-            </Button>
-          )}
+          <Button
+            onClick={handleDownloadCSV}
+            disabled={movements.length === 0}
+            className="bg-gradient-amber text-primary-foreground hover:opacity-90"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Baixar Relatório
+          </Button>
         </div>
 
         {/* Date Selector */}
