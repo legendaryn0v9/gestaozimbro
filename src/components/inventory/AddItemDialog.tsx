@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,53 +6,23 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddItem, SectorType, UnitType } from '@/hooks/useInventory';
+import { useCategories } from '@/hooks/useCategories';
 import { Package, Plus, ImagePlus, X } from 'lucide-react';
-
-type CategoryType = 'destilados' | 'naoAlcoolicos' | 'alcoolicos';
 
 interface AddItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultSector?: SectorType;
   defaultCategory?: string;
-  categoryType?: CategoryType;
+  categoryType?: 'destilados' | 'naoAlcoolicos' | 'alcoolicos';
 }
 
-const DESTILADOS_CATEGORIES = [
-  'Destilados',
-  'Vodka',
-  'Gin',
-  'Whisky',
-  'Rum',
-  'Tequila',
-  'Cognac',
-];
-
-const NAO_ALCOOLICOS_CATEGORIES = [
-  'Refrigerante',
-  'Energético',
-  'Cerveja Zero',
-  'Água com Gás',
-  'Água sem Gás',
-];
-
-const ALCOOLICOS_CATEGORIES = [
-  'Cerveja',
-  'Vinho',
-  'Licor',
-];
-
-const COZINHA_CATEGORIES = [
-  'Carnes',
-  'Aves',
-  'Peixes',
-  'Vegetais',
-  'Frutas',
-  'Laticínios',
-  'Grãos',
-  'Temperos',
-  'Congelados',
-];
+// Fallback categories for Bar (used when no dynamic categories exist)
+const BAR_FALLBACK_CATEGORIES = {
+  destilados: ['Destilados', 'Vodka', 'Gin', 'Whisky', 'Rum', 'Tequila', 'Cognac'],
+  naoAlcoolicos: ['Refrigerante', 'Energético', 'Cerveja Zero', 'Água com Gás', 'Água sem Gás'],
+  alcoolicos: ['Cerveja', 'Vinho', 'Licor'],
+};
 
 export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCategory, categoryType }: AddItemDialogProps) {
   const [name, setName] = useState('');
@@ -62,33 +32,58 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const [quantity, setQuantity] = useState('0');
   const [minQuantity, setMinQuantity] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState(defaultCategory || '');
+  const [selectedMainCategory, setSelectedMainCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [customCategory, setCustomCategory] = useState('');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addItem = useAddItem();
+  
+  // Fetch dynamic categories based on sector
+  const { data: dynamicCategories = [] } = useCategories(sector);
 
-  const getBarCategories = () => {
-    switch (categoryType) {
-      case 'naoAlcoolicos':
-        return NAO_ALCOOLICOS_CATEGORIES;
-      case 'alcoolicos':
-        return ALCOOLICOS_CATEGORIES;
-      case 'destilados':
-      default:
-        return DESTILADOS_CATEGORIES;
+  // Update sector when defaultSector changes
+  useEffect(() => {
+    if (defaultSector) {
+      setSector(defaultSector);
     }
-  };
+  }, [defaultSector]);
 
-  const categories = sector === 'bar' ? getBarCategories() : COZINHA_CATEGORIES;
+  // Set default category when dialog opens
+  useEffect(() => {
+    if (open && defaultCategory && dynamicCategories.length > 0) {
+      // Check if defaultCategory matches a main category
+      const mainCat = dynamicCategories.find(c => c.name === defaultCategory);
+      if (mainCat) {
+        setSelectedMainCategory(mainCat.id);
+        setSelectedSubcategory('');
+      } else {
+        // Check if it's a subcategory
+        for (const cat of dynamicCategories) {
+          const sub = cat.subcategories.find(s => s.name === defaultCategory);
+          if (sub) {
+            setSelectedMainCategory(cat.id);
+            setSelectedSubcategory(sub.id);
+            break;
+          }
+        }
+      }
+    }
+  }, [open, defaultCategory, dynamicCategories]);
 
   const handleSectorChange = (newSector: SectorType) => {
     setSector(newSector);
-    setCategory('');
+    setSelectedMainCategory('');
+    setSelectedSubcategory('');
     setCustomCategory('');
     setIsCustomCategory(false);
+  };
+
+  const handleMainCategoryChange = (categoryId: string) => {
+    setSelectedMainCategory(categoryId);
+    setSelectedSubcategory('');
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,12 +109,17 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
       return customCategory.trim();
     }
 
-    if (category) {
-      return category;
+    // If subcategory is selected, use subcategory name
+    if (selectedSubcategory) {
+      const mainCat = dynamicCategories.find(c => c.id === selectedMainCategory);
+      const sub = mainCat?.subcategories.find(s => s.id === selectedSubcategory);
+      return sub?.name || null;
     }
 
-    if (defaultCategory) {
-      return defaultCategory;
+    // If only main category is selected, use main category name
+    if (selectedMainCategory) {
+      const mainCat = dynamicCategories.find(c => c.id === selectedMainCategory);
+      return mainCat?.name || null;
     }
 
     return null;
@@ -131,7 +131,8 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     setQuantity('0');
     setMinQuantity('');
     setPrice('');
-    setCategory('');
+    setSelectedMainCategory('');
+    setSelectedSubcategory('');
     setCustomCategory('');
     setIsCustomCategory(false);
     setImagePreview(null);
@@ -161,6 +162,12 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     );
   };
 
+  // Get subcategories for selected main category
+  const selectedCategory = dynamicCategories.find(c => c.id === selectedMainCategory);
+  const subcategories = selectedCategory?.subcategories || [];
+
+  const hasDynamicCategories = dynamicCategories.length > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass border-border max-w-md max-h-[90vh] overflow-y-auto">
@@ -169,9 +176,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Package className="w-4 h-4 text-primary" />
             </div>
-            {categoryType === 'naoAlcoolicos' ? 'Lançamento de Não Alcoólicos' : 
-             categoryType === 'alcoolicos' ? 'Lançamento de Alcoólicos' : 
-             'Lançamento de Bebidas'}
+            {sector === 'cozinha' ? 'Novo Item - Cozinha' : 'Novo Item - Bar'}
           </DialogTitle>
         </DialogHeader>
 
@@ -200,63 +205,89 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 items-end">
-            <div className="space-y-2">
-              <Label>Setor</Label>
-              {defaultSector ? (
-                <div className="h-10 px-3 py-2 bg-muted rounded-md border border-border flex items-center">
-                  {sector === 'bar' ? 'Bar' : 'Cozinha'}
-                </div>
-              ) : (
-                <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
-                  <SelectTrigger className="bg-input border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border z-50">
-                    <SelectItem value="bar">Bar</SelectItem>
-                    <SelectItem value="cozinha">Cozinha</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label>Setor</Label>
+            {defaultSector ? (
+              <div className="h-10 px-3 py-2 bg-muted rounded-md border border-border flex items-center">
+                {sector === 'bar' ? 'Bar' : 'Cozinha'}
+              </div>
+            ) : (
+              <Select value={sector} onValueChange={(v) => handleSectorChange(v as SectorType)}>
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border z-50">
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="cozinha">Cozinha</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
 
-            <div className="space-y-2">
-              <Label className="flex items-center justify-between">
-                <span>Categoria</span>
+          {/* Category Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Categoria</Label>
+              {hasDynamicCategories && (
                 <button
                   type="button"
                   onClick={() => {
                     setIsCustomCategory(!isCustomCategory);
-                    setCategory('');
+                    setSelectedMainCategory('');
+                    setSelectedSubcategory('');
                     setCustomCategory('');
                   }}
                   className="text-xs text-primary hover:underline"
                 >
                   {isCustomCategory ? 'Usar existente' : 'Criar nova'}
                 </button>
-              </Label>
-              {isCustomCategory ? (
-                <Input
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  placeholder="Nome da nova categoria..."
-                  className="bg-input border-border"
-                />
-              ) : (
-                <Select value={category} onValueChange={setCategory}>
+              )}
+            </div>
+
+            {!hasDynamicCategories ? (
+              <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                Nenhuma categoria criada. Crie categorias primeiro no botão "Categorias".
+              </div>
+            ) : isCustomCategory ? (
+              <Input
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Nome da nova categoria..."
+                className="bg-input border-border"
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {/* Main Category */}
+                <Select value={selectedMainCategory} onValueChange={handleMainCategoryChange}>
                   <SelectTrigger className="bg-input border-border">
-                    <SelectValue placeholder="Selecione..." />
+                    <SelectValue placeholder="Selecione a categoria..." />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border z-50">
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
+                    {dynamicCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
-            </div>
+
+                {/* Subcategory (if main category has subcategories) */}
+                {selectedMainCategory && subcategories.length > 0 && (
+                  <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+                    <SelectTrigger className="bg-input border-border">
+                      <SelectValue placeholder="Selecione a subcategoria (opcional)..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border z-50">
+                      {subcategories.map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
