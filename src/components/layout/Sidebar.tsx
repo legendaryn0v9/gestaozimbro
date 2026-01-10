@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useMemo } from 'react';
 import { 
   Wine, 
   Package, 
@@ -14,17 +15,18 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useCurrentUserProfile } from '@/hooks/useUserProfile';
+import { useUserSector } from '@/hooks/useUserSector';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Wine, label: 'Bar', path: '/bar' },
-  { icon: UtensilsCrossed, label: 'Cozinha', path: '/cozinha' },
-  { icon: TrendingUp, label: 'Entrada', path: '/entrada' },
-  { icon: TrendingDown, label: 'Saída', path: '/saida' },
-  { icon: ClipboardList, label: 'Relatórios', path: '/relatorios' },
+const baseMenuItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/', sector: null },
+  { icon: Wine, label: 'Bar', path: '/bar', sector: 'bar' as const },
+  { icon: UtensilsCrossed, label: 'Cozinha', path: '/cozinha', sector: 'cozinha' as const },
+  { icon: TrendingUp, label: 'Entrada', path: '/entrada', sector: null },
+  { icon: TrendingDown, label: 'Saída', path: '/saida', sector: null },
+  { icon: ClipboardList, label: 'Relatórios', path: '/relatorios', sector: null },
 ];
 
 const adminMenuItems = [
@@ -40,10 +42,24 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const { signOut, user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { data: profile } = useCurrentUserProfile(user?.id);
+  const { sector } = useUserSector();
 
   const handleClick = () => {
     onNavigate?.();
   };
+
+  // Filter menu items based on user's sector
+  // Admins (sector = null) see all, employees see only their sector
+  const menuItems = useMemo(() => {
+    return baseMenuItems.filter((item) => {
+      // Items with no sector restriction are always visible
+      if (item.sector === null) return true;
+      // Admins see all sector items
+      if (isAdmin) return true;
+      // Employees only see their assigned sector
+      return sector === item.sector;
+    });
+  }, [sector, isAdmin]);
 
   const getInitials = (name: string | undefined) => {
     if (!name) return 'U';
