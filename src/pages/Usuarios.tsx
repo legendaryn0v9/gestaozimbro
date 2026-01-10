@@ -124,7 +124,7 @@ export default function Usuarios() {
                           <SelectItem value="admin">
                             <div className="flex items-center gap-2">
                               <Crown className="w-4 h-4 text-amber-500" />
-                              Gerente
+                              Gestor
                             </div>
                           </SelectItem>
                           <SelectItem value="funcionario">
@@ -142,7 +142,7 @@ export default function Usuarios() {
                         ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
                         : 'bg-blue-500/20 text-blue-500 border-blue-500/50'
                     }>
-                      {u.role === 'admin' ? 'Gerente' : 'Funcionário'}
+                      {u.role === 'admin' ? 'Gestor' : 'Funcionário'}
                     </Badge>
                   </div>
                 </div>
