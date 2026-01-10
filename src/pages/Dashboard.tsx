@@ -46,7 +46,18 @@ export default function Dashboard() {
 
   const barItems = items.filter(i => i.sector === 'bar');
   const cozinhaItems = items.filter(i => i.sector === 'cozinha');
-  const lowStockItems = items.filter(i => i.min_quantity !== null && i.quantity <= i.min_quantity);
+  
+  // Filter low stock items based on user role and sector
+  const allLowStockItems = items.filter(i => i.min_quantity !== null && i.quantity <= i.min_quantity);
+  const barLowStockItems = allLowStockItems.filter(i => i.sector === 'bar');
+  const cozinhaLowStockItems = allLowStockItems.filter(i => i.sector === 'cozinha');
+  
+  // For employees, only show alerts from their sector
+  const lowStockItems = useMemo(() => {
+    if (isAdmin) return allLowStockItems;
+    if (!userSector) return allLowStockItems;
+    return allLowStockItems.filter(i => i.sector === userSector);
+  }, [allLowStockItems, isAdmin, userSector]);
   
   const todayEntradas = movements.filter(m => m.movement_type === 'entrada').length;
   const todaySaidas = movements.filter(m => m.movement_type === 'saida').length;
@@ -167,30 +178,110 @@ export default function Dashboard() {
           <div>
             <div className="glass rounded-xl lg:rounded-2xl p-4 lg:p-6">
               <h2 className="text-lg lg:text-xl font-display font-semibold mb-3 lg:mb-4">Alertas de Estoque</h2>
-              {lowStockItems.length === 0 ? (
-                <div className="text-center py-6 lg:py-8 text-muted-foreground">
-                  <AlertTriangle className="w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Nenhum alerta no momento</p>
-                </div>
-              ) : (
-                <div className="space-y-2 lg:space-y-3">
-                  {lowStockItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-2.5 lg:p-3 rounded-lg bg-warning/10 border border-warning/20"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm lg:text-base text-foreground">{item.name}</span>
-                        <span className="text-warning font-semibold text-sm lg:text-base">
-                          {item.quantity} {item.unit}
+              
+              {isAdmin ? (
+                <Tabs defaultValue="bar" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="bar" className="flex items-center gap-2">
+                      <Wine className="w-4 h-4" />
+                      Bar
+                      {barLowStockItems.length > 0 && (
+                        <span className="text-xs bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+                          {barLowStockItems.length}
                         </span>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="cozinha" className="flex items-center gap-2">
+                      <UtensilsCrossed className="w-4 h-4" />
+                      Cozinha
+                      {cozinhaLowStockItems.length > 0 && (
+                        <span className="text-xs bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+                          {cozinhaLowStockItems.length}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="bar">
+                    {barLowStockItems.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <AlertTriangle className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhum alerta no Bar</p>
                       </div>
-                      <p className="text-xs lg:text-sm text-muted-foreground mt-1">
-                        Mínimo: {item.min_quantity} {item.unit}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {barLowStockItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2.5 rounded-lg bg-warning/10 border border-warning/20"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm text-foreground">{item.name}</span>
+                              <span className="text-warning font-semibold text-sm">
+                                {item.quantity} {item.unit}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Mínimo: {item.min_quantity} {item.unit}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="cozinha">
+                    {cozinhaLowStockItems.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <AlertTriangle className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhum alerta na Cozinha</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {cozinhaLowStockItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2.5 rounded-lg bg-warning/10 border border-warning/20"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm text-foreground">{item.name}</span>
+                              <span className="text-warning font-semibold text-sm">
+                                {item.quantity} {item.unit}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Mínimo: {item.min_quantity} {item.unit}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                lowStockItems.length === 0 ? (
+                  <div className="text-center py-6 lg:py-8 text-muted-foreground">
+                    <AlertTriangle className="w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Nenhum alerta no momento</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 lg:space-y-3">
+                    {lowStockItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-2.5 lg:p-3 rounded-lg bg-warning/10 border border-warning/20"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm lg:text-base text-foreground">{item.name}</span>
+                          <span className="text-warning font-semibold text-sm lg:text-base">
+                            {item.quantity} {item.unit}
+                          </span>
+                        </div>
+                        <p className="text-xs lg:text-sm text-muted-foreground mt-1">
+                          Mínimo: {item.min_quantity} {item.unit}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           </div>
