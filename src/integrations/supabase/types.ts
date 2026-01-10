@@ -236,6 +236,29 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      record_stock_movement: {
+        Args: {
+          _item_id: string
+          _movement_type: Database["public"]["Enums"]["movement_type"]
+          _notes?: string
+          _quantity: number
+        }
+        Returns: {
+          created_at: string
+          id: string
+          item_id: string
+          movement_type: Database["public"]["Enums"]["movement_type"]
+          notes: string | null
+          quantity: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stock_movements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "funcionario"
