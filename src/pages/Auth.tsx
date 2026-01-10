@@ -142,7 +142,7 @@ export default function Auth() {
 
           <div className="mt-6 text-center">
             <p className="text-muted-foreground text-sm">
-              Solicite acesso ao seu gerente
+              Solicite acesso ao seu gestor
             </p>
           </div>
         </div>

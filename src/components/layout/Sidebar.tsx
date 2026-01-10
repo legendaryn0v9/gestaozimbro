@@ -131,7 +131,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 {isAdmin ? (
                   <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
                     <Crown className="w-3 h-3 mr-1" />
-                    Gerente
+                    Gestor
                   </Badge>
                 ) : (
                   <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
