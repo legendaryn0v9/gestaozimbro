@@ -193,7 +193,7 @@ export function ItemCard({ item, onClick }: ItemCardProps) {
             </div>
             <AlertDialogDescription className="text-left pt-2">
               Você está prestes a excluir <strong className="text-foreground">{item.name}</strong> do estoque. 
-              Todo o histórico de movimentações deste item também será removido.
+              O histórico de movimentações será preservado nos relatórios.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
