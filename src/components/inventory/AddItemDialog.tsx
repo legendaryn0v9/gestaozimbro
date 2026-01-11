@@ -34,8 +34,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   const [price, setPrice] = useState('');
   const [selectedMainCategory, setSelectedMainCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,8 +75,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     setSector(newSector);
     setSelectedMainCategory('');
     setSelectedSubcategory('');
-    setCustomCategory('');
-    setIsCustomCategory(false);
   };
 
   const handleMainCategoryChange = (categoryId: string) => {
@@ -105,10 +101,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
   };
 
   const getFinalCategory = () => {
-    if (isCustomCategory && customCategory.trim()) {
-      return customCategory.trim();
-    }
-
     // If subcategory is selected, use subcategory name
     if (selectedSubcategory) {
       const mainCat = dynamicCategories.find(c => c.id === selectedMainCategory);
@@ -133,8 +125,6 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
     setPrice('');
     setSelectedMainCategory('');
     setSelectedSubcategory('');
-    setCustomCategory('');
-    setIsCustomCategory(false);
     setImagePreview(null);
   };
 
@@ -148,7 +138,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
         sector,
         unit,
         quantity: Number(quantity),
-        min_quantity: minQuantity ? Number(minQuantity) : null,
+        min_quantity: Number(minQuantity),
         price: price ? Number(price) : 0,
         category: getFinalCategory(),
         image_url: imagePreview,
@@ -226,35 +216,12 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
 
           {/* Category Selection */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Categoria</Label>
-              {hasDynamicCategories && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCustomCategory(!isCustomCategory);
-                    setSelectedMainCategory('');
-                    setSelectedSubcategory('');
-                    setCustomCategory('');
-                  }}
-                  className="text-xs text-primary hover:underline"
-                >
-                  {isCustomCategory ? 'Usar existente' : 'Criar nova'}
-                </button>
-              )}
-            </div>
+            <Label>Categoria</Label>
 
             {!hasDynamicCategories ? (
               <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
                 Nenhuma categoria criada. Crie categorias primeiro no botão "Categorias".
               </div>
-            ) : isCustomCategory ? (
-              <Input
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                placeholder="Nome da nova categoria..."
-                className="bg-input border-border"
-              />
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {/* Main Category */}
@@ -322,7 +289,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="minQuantity">Quantidade Mínima (Alerta)</Label>
+            <Label htmlFor="minQuantity">Quantidade Mínima (Alerta) *</Label>
             <Input
               id="minQuantity"
               type="number"
@@ -332,6 +299,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
               onChange={(e) => setMinQuantity(e.target.value)}
               placeholder="Quantidade para alerta de estoque baixo"
               className="bg-input border-border"
+              required
             />
           </div>
 
@@ -390,7 +358,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
 
           <Button
             type="submit"
-            disabled={addItem.isPending || !name}
+            disabled={addItem.isPending || !name || !minQuantity}
             className="w-full bg-gradient-amber text-primary-foreground hover:opacity-90 h-11"
           >
             {addItem.isPending ? (
