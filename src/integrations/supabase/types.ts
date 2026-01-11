@@ -288,6 +288,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -296,6 +297,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_dono: { Args: never; Returns: boolean }
       record_stock_movement: {
         Args: {
           _item_id: string

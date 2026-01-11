@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
-export type AppRole = 'admin' | 'funcionario';
+export type AppRole = 'admin' | 'funcionario' | 'dono';
 
 export interface UserRole {
   id: string;
@@ -47,7 +47,31 @@ export function useCurrentUserRole() {
 export function useIsAdmin() {
   const { data: userRole, isLoading } = useCurrentUserRole();
   return {
-    isAdmin: userRole?.role === 'admin',
+    isAdmin: userRole?.role === 'admin' || userRole?.role === 'dono',
+    isLoading,
+  };
+}
+
+export function useIsDono() {
+  const { data: userRole, isLoading } = useCurrentUserRole();
+  return {
+    isDono: userRole?.role === 'dono',
+    isLoading,
+  };
+}
+
+export function useIsGestorOrDono() {
+  const { data: userRole, isLoading } = useCurrentUserRole();
+  return {
+    isGestorOrDono: userRole?.role === 'admin' || userRole?.role === 'dono',
+    isLoading,
+  };
+}
+
+export function useCurrentRole() {
+  const { data: userRole, isLoading } = useCurrentUserRole();
+  return {
+    role: userRole?.role || null,
     isLoading,
   };
 }
