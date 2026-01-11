@@ -19,6 +19,7 @@ interface MovementDialogProps {
   onOpenChange: (open: boolean) => void;
   type: MovementType;
   preselectedItemId?: string;
+  sector?: 'bar' | 'cozinha';
 }
 
 // Helper to get icon component
@@ -28,10 +29,9 @@ const getIconComponent = (iconName: string | null): React.ComponentType<{ classN
   return icons[iconName] || Package;
 };
 
-// Unit conversion helpers
+// Unit conversion helpers - only for kg (gramas), litro stays as L with decimals
 const unitConversions: Record<string, { subUnit: string; factor: number; subUnitLabel: string }> = {
   kg: { subUnit: 'g', factor: 1000, subUnitLabel: 'gramas' },
-  litro: { subUnit: 'ml', factor: 1000, subUnitLabel: 'mililitros' },
 };
 
 const getUnitLabel = (unit: string, useSubUnit: boolean) => {
@@ -48,7 +48,7 @@ const getUnitLabel = (unit: string, useSubUnit: boolean) => {
   return labels[unit] || unit;
 };
 
-export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: MovementDialogProps) {
+export function MovementDialog({ open, onOpenChange, type, preselectedItemId, sector }: MovementDialogProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [quantity, setQuantity] = useState('');
   const [useSubUnit, setUseSubUnit] = useState(false);
@@ -60,17 +60,20 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
   const { sector: userSector } = useUserSector();
   const addMovement = useAddMovement();
   
-  // Fetch categories for both sectors
+  // Determine which sector to use - prefer prop, then user sector
+  const effectiveSector = sector || userSector;
+  
+  // Fetch categories only for the effective sector
   const { data: barCategories = [] } = useCategories('bar');
   const { data: cozinhaCategories = [] } = useCategories('cozinha');
 
-  // Filter items by sector for employees
+  // Filter items by effective sector
   const items = useMemo(() => {
-    if (isAdmin || !userSector) {
-      return allItems;
+    if (effectiveSector) {
+      return allItems.filter(item => item.sector === effectiveSector);
     }
-    return allItems.filter(item => item.sector === userSector);
-  }, [allItems, isAdmin, userSector]);
+    return allItems;
+  }, [allItems, effectiveSector]);
 
   // Set preselected item when dialog opens
   useEffect(() => {
@@ -101,14 +104,14 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
     );
   }, [items, searchQuery]);
 
-  // Organize items by categories - show ALL items properly
+  // Organize items by categories - show only items from effective sector
   const organizedItems = useMemo(() => {
-    // For admin, show all categories; for employee, filter by sector
-    let categories = isAdmin || !userSector
-      ? [...barCategories, ...cozinhaCategories]
-      : userSector === 'bar' 
-        ? barCategories 
-        : cozinhaCategories;
+    // Use only categories from the effective sector
+    let categories = effectiveSector === 'bar' 
+      ? barCategories 
+      : effectiveSector === 'cozinha'
+        ? cozinhaCategories
+        : [...barCategories, ...cozinhaCategories];
 
     // Sort categories by sort_order
     categories = [...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
@@ -183,7 +186,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
       .sort((a, b) => a.name.localeCompare(b.name));
 
     return { grouped, uncategorized };
-  }, [filteredItems, barCategories, cozinhaCategories, userSector, isAdmin]);
+  }, [filteredItems, barCategories, cozinhaCategories, effectiveSector]);
 
   // Calculate final quantity for display
   const getFinalQuantity = () => {

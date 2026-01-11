@@ -449,7 +449,7 @@ export default function Bar() {
 
         <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" />
 
-        <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" />
+        <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" sector="bar" />
 
         <MovementDialog
           open={saidaDialogOpen}
@@ -459,6 +459,7 @@ export default function Bar() {
           }}
           type="saida"
           preselectedItemId={selectedItemId}
+          sector="bar"
         />
 
         <CategoryManagerDialog
