@@ -218,40 +218,50 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
           <div className="space-y-4">
             <Label>Categoria</Label>
 
-            {!hasDynamicCategories ? (
+          {!hasDynamicCategories ? (
               <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
                 Nenhuma categoria criada. Crie categorias primeiro no botão "Categorias".
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {/* Main Category */}
-                <Select value={selectedMainCategory} onValueChange={handleMainCategoryChange}>
-                  <SelectTrigger className="bg-input border-border">
-                    <SelectValue placeholder="Selecione a categoria..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border z-50">
-                    {dynamicCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Subcategory (if main category has subcategories) */}
-                {selectedMainCategory && subcategories.length > 0 && (
-                  <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
-                    <SelectTrigger className="bg-input border-border">
-                      <SelectValue placeholder="Selecione a subcategoria (opcional)..." />
+                {/* Main Category (required) */}
+                <div className="space-y-1">
+                  <Select value={selectedMainCategory} onValueChange={handleMainCategoryChange} required>
+                    <SelectTrigger className={`bg-input border-border ${!selectedMainCategory ? 'border-destructive/50' : ''}`}>
+                      <SelectValue placeholder="Selecione a categoria *" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border z-50">
-                      {subcategories.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id}>
-                          {sub.name}
+                      {dynamicCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {!selectedMainCategory && (
+                    <p className="text-xs text-destructive">Categoria é obrigatória</p>
+                  )}
+                </div>
+
+          {/* Subcategory (required when category has subcategories) */}
+                {selectedMainCategory && subcategories.length > 0 && (
+                  <div className="space-y-1">
+                    <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory} required>
+                      <SelectTrigger className={`bg-input border-border ${!selectedSubcategory ? 'border-destructive/50' : ''}`}>
+                        <SelectValue placeholder="Selecione a subcategoria *" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border z-50">
+                        {subcategories.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!selectedSubcategory && (
+                      <p className="text-xs text-destructive">Subcategoria é obrigatória</p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -358,7 +368,7 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
 
           <Button
             type="submit"
-            disabled={addItem.isPending || !name || !minQuantity}
+            disabled={addItem.isPending || !name || !minQuantity || !selectedMainCategory || (subcategories.length > 0 && !selectedSubcategory)}
             className="w-full bg-gradient-amber text-primary-foreground hover:opacity-90 h-11"
           >
             {addItem.isPending ? (
