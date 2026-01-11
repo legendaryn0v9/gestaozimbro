@@ -109,8 +109,9 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Build category string
-    let categoryString: string | null = null;
+    // Build category string - IMPORTANT: preserve category if none selected
+    let categoryString: string | null = item.category; // Default to current category
+    
     const selectedCategory = categories.find(c => c.id === selectedCategoryId);
     if (selectedCategory) {
       const selectedSubcategory = selectedCategory.subcategories.find(s => s.id === selectedSubcategoryId);
