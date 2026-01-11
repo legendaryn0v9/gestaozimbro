@@ -65,11 +65,6 @@ export default function Bar() {
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
 
-  // Get items without any category
-  const uncategorizedItems = useMemo(() => {
-    return items.filter((item) => !item.category || item.category.trim() === '');
-  }, [items]);
-
   // Group items by category and subcategory
   const organizedItems = useMemo(() => {
     const result: Record<string, {
@@ -102,14 +97,6 @@ export default function Bar() {
     return result;
   }, [items, dynamicCategories]);
 
-  // Filter uncategorized items by search
-  const filteredUncategorizedItems = useMemo(() => {
-    if (!search) return uncategorizedItems;
-    return uncategorizedItems.filter((item) =>
-      item.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [uncategorizedItems, search]);
-
   // Filter by search
   const filteredOrganizedItems = useMemo(() => {
     if (!search) return organizedItems;
@@ -138,7 +125,7 @@ export default function Bar() {
   }, [organizedItems, search]);
 
   const totalFilteredItems = useMemo(() => {
-    let count = filteredUncategorizedItems.length;
+    let count = 0;
     Object.values(filteredOrganizedItems).forEach((data) => {
       count += data.categoryItems.length;
       Object.values(data.subcategories).forEach((subItems) => {
@@ -146,7 +133,7 @@ export default function Bar() {
       });
     });
     return count;
-  }, [filteredOrganizedItems, filteredUncategorizedItems]);
+  }, [filteredOrganizedItems]);
 
   const handleItemClick = (itemId: string) => {
     setSelectedItemId(itemId);
@@ -449,30 +436,6 @@ export default function Bar() {
                 </section>
               );
             })}
-
-            {/* Uncategorized Items Section */}
-            {filteredUncategorizedItems.length > 0 && (
-              <section className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-lg">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-display font-bold text-foreground">Sem Categoria</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {filteredUncategorizedItems.length} {filteredUncategorizedItems.length === 1 ? 'item precisa' : 'itens precisam'} de categoria
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:overflow-visible sm:pb-0">
-                  {filteredUncategorizedItems.map((item) => (
-                    <div key={item.id} className="min-w-[280px] sm:min-w-0 snap-start">
-                      <ItemCard item={item} onClick={() => handleItemClick(item.id)} />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
 
             {search && totalFilteredItems === 0 && (
               <div className="text-center py-16">
