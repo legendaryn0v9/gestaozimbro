@@ -275,6 +275,9 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
     );
   };
 
+  // Check if we're in "direct product" mode (preselected item)
+  const isDirectMode = Boolean(preselectedItemId && selectedItem);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass border-border max-w-lg max-h-[90vh] overflow-hidden flex flex-col p-0">
@@ -295,73 +298,78 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          {/* Search */}
-          <div className="px-4 py-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produto..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-input border-border"
-              />
-            </div>
-          </div>
+          {/* Only show search and items list when NOT in direct mode */}
+          {!isDirectMode && (
+            <>
+              {/* Search */}
+              <div className="px-4 py-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produto..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 bg-input border-border"
+                  />
+                </div>
+              </div>
 
-          {/* Items List */}
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-4 pb-4">
-              {organizedItems.grouped.map(({ category, items: directItems, subcategories }) => {
-                const IconComponent = getIconComponent(category.icon);
-                
-                return (
-                  <div key={category.id}>
-                    <div className={cn(
-                      'flex items-center gap-2 font-semibold text-sm mb-2 px-1',
-                      `bg-gradient-to-r ${category.gradient || 'from-amber-500 to-orange-600'} bg-clip-text text-transparent`
-                    )}>
-                      <IconComponent className="w-4 h-4 text-primary" />
-                      {category.name}
-                    </div>
+              {/* Items List with improved scrolling */}
+              <ScrollArea className="flex-1 min-h-[200px] max-h-[400px] px-4">
+                <div className="space-y-4 pb-4">
+                  {organizedItems.grouped.map(({ category, items: directItems, subcategories }) => {
+                    const IconComponent = getIconComponent(category.icon);
                     
-                    <div className="space-y-2">
-                      {directItems.map(renderItemCard)}
-                      
-                      {subcategories.map(({ subcategory, items: subItems }) => (
-                        <div key={subcategory.id} className="ml-2">
-                          <p className="text-xs font-medium text-muted-foreground mb-1 pl-2">
-                            └ {subcategory.name}
-                          </p>
-                          <div className="space-y-2">
-                            {subItems.map(renderItemCard)}
-                          </div>
+                    return (
+                      <div key={category.id}>
+                        <div className={cn(
+                          'flex items-center gap-2 font-semibold text-sm mb-2 px-1 sticky top-0 bg-background/95 backdrop-blur-sm py-1 -mx-1 px-1',
+                          `bg-gradient-to-r ${category.gradient || 'from-amber-500 to-orange-600'} bg-clip-text text-transparent`
+                        )}>
+                          <IconComponent className="w-4 h-4 text-primary" />
+                          {category.name}
                         </div>
-                      ))}
+                        
+                        <div className="space-y-2">
+                          {directItems.map(renderItemCard)}
+                          
+                          {subcategories.map(({ subcategory, items: subItems }) => (
+                            <div key={subcategory.id} className="ml-2">
+                              <p className="text-xs font-medium text-muted-foreground mb-1 pl-2">
+                                └ {subcategory.name}
+                              </p>
+                              <div className="space-y-2">
+                                {subItems.map(renderItemCard)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {organizedItems.uncategorized.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 font-semibold text-sm mb-2 px-1 text-muted-foreground">
+                        <Package className="w-4 h-4" />
+                        Sem Categoria
+                      </div>
+                      <div className="space-y-2">
+                        {organizedItems.uncategorized.map(renderItemCard)}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              
-              {organizedItems.uncategorized.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 font-semibold text-sm mb-2 px-1 text-muted-foreground">
-                    <Package className="w-4 h-4" />
-                    Sem Categoria
-                  </div>
-                  <div className="space-y-2">
-                    {organizedItems.uncategorized.map(renderItemCard)}
-                  </div>
+                  )}
+                  
+                  {filteredItems.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>Nenhum produto encontrado</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              {filteredItems.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum produto encontrado</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+              </ScrollArea>
+            </>
+          )}
 
           {/* Selected Item Details & Quantity */}
           {selectedItem && (
