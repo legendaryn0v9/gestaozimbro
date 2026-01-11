@@ -29,15 +29,8 @@ const getIconComponent = (iconName: string | null): React.ComponentType<{ classN
   return icons[iconName] || Package;
 };
 
-// Unit conversion helpers - only for kg (gramas), litro stays as L with decimals
-const unitConversions: Record<string, { subUnit: string; factor: number; subUnitLabel: string }> = {
-  kg: { subUnit: 'g', factor: 1000, subUnitLabel: 'gramas' },
-};
-
-const getUnitLabel = (unit: string, useSubUnit: boolean) => {
-  if (useSubUnit && unitConversions[unit]) {
-    return unitConversions[unit].subUnit;
-  }
+// No more unit conversions - everything stays in the main unit
+const getUnitLabel = (unit: string) => {
   const labels: Record<string, string> = {
     unidade: 'un',
     kg: 'kg',
@@ -51,7 +44,6 @@ const getUnitLabel = (unit: string, useSubUnit: boolean) => {
 export function MovementDialog({ open, onOpenChange, type, preselectedItemId, sector }: MovementDialogProps) {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [quantity, setQuantity] = useState('');
-  const [useSubUnit, setUseSubUnit] = useState(false);
   const [notes, setNotes] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -88,7 +80,6 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
     if (!open) {
       setSelectedItem(null);
       setQuantity('');
-      setUseSubUnit(false);
       setNotes('');
       setSearchQuery('');
     }
@@ -129,13 +120,6 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
     const assignedItemIds = new Set<string>();
 
     categories.forEach(category => {
-      // Find ALL items that belong to this category
-      const allCategoryItems = filteredItems.filter(item => {
-        if (!item.category) return false;
-        const itemCategoryName = item.category.split(' - ')[0]?.trim();
-        return itemCategoryName === category.name;
-      });
-
       const subcategoryGroups: typeof grouped[0]['subcategories'] = [];
       
       // Sort subcategories by sort_order
@@ -144,12 +128,22 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
       );
       
       sortedSubcategories.forEach(sub => {
+        // Find items that match this subcategory
+        // Check both formats: "Category - Subcategory" AND just "Subcategory"
         const subItems = filteredItems.filter(item => {
           if (!item.category) return false;
-          const parts = item.category.split(' - ');
-          const itemCategoryName = parts[0]?.trim();
-          const itemSubcategoryName = parts[1]?.trim();
-          return itemCategoryName === category.name && itemSubcategoryName === sub.name;
+          const categoryValue = item.category.trim();
+          
+          // Check format "Category - Subcategory"
+          const parts = categoryValue.split(' - ');
+          if (parts.length === 2) {
+            const itemCategoryName = parts[0]?.trim();
+            const itemSubcategoryName = parts[1]?.trim();
+            return itemCategoryName === category.name && itemSubcategoryName === sub.name;
+          }
+          
+          // Check if it's just the subcategory name
+          return categoryValue === sub.name;
         });
         
         if (subItems.length > 0) {
@@ -161,11 +155,20 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
         }
       });
 
-      // Direct items are those in the category but NOT in any subcategory
-      const directItems = allCategoryItems.filter(item => {
-        const parts = item.category?.split(' - ');
-        // Item is direct if it has no subcategory part
-        return parts?.length === 1 || !parts?.[1]?.trim();
+      // Find items directly in this category (not in any subcategory)
+      const directItems = filteredItems.filter(item => {
+        if (!item.category || assignedItemIds.has(item.id)) return false;
+        const categoryValue = item.category.trim();
+        
+        // Check format "Category" only (no subcategory)
+        const parts = categoryValue.split(' - ');
+        if (parts.length === 1) {
+          return categoryValue === category.name;
+        }
+        
+        // Check format "Category - Subcategory" but no matching subcategory
+        const itemCategoryName = parts[0]?.trim();
+        return itemCategoryName === category.name;
       }).sort((a, b) => a.name.localeCompare(b.name));
       
       directItems.forEach(item => assignedItemIds.add(item.id));
@@ -192,11 +195,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
   const getFinalQuantity = () => {
     if (!selectedItem || !quantity) return null;
     
-    let qtyValue = Number(quantity);
-    if (useSubUnit && unitConversions[selectedItem.unit]) {
-      qtyValue = qtyValue / unitConversions[selectedItem.unit].factor;
-    }
-    
+    const qtyValue = Number(quantity);
     const current = selectedItem.quantity;
     const final = type === 'entrada' ? current + qtyValue : current - qtyValue;
     return { qtyValue, final };
@@ -206,10 +205,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
     e.preventDefault();
     if (!selectedItem) return;
     
-    let finalQty = Number(quantity);
-    if (useSubUnit && unitConversions[selectedItem.unit]) {
-      finalQty = finalQty / unitConversions[selectedItem.unit].factor;
-    }
+    const finalQty = Number(quantity);
     
     addMovement.mutate(
       {
@@ -222,7 +218,6 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
         onSuccess: () => {
           setSelectedItem(null);
           setQuantity('');
-          setUseSubUnit(false);
           setNotes('');
           setSearchQuery('');
           onOpenChange(false);
@@ -232,12 +227,11 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
   };
 
   const isEntrada = type === 'entrada';
-  const hasSubUnit = selectedItem && unitConversions[selectedItem.unit];
   const calc = getFinalQuantity();
 
   const renderItemCard = (item: InventoryItem) => {
     const isSelected = selectedItem?.id === item.id;
-    const unitLabel = getUnitLabel(item.unit, false);
+    const unitLabel = getUnitLabel(item.unit);
     
     return (
       <button
@@ -245,7 +239,6 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
         type="button"
         onClick={() => {
           setSelectedItem(item);
-          setUseSubUnit(false);
           setQuantity('');
         }}
         className={cn(
@@ -377,19 +370,19 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-semibold">{selectedItem.name}</p>
                   <span className="text-sm text-muted-foreground">
-                    Estoque: {selectedItem.quantity} {getUnitLabel(selectedItem.unit, false)}
+                    Estoque: {selectedItem.quantity} {getUnitLabel(selectedItem.unit)}
                   </span>
                 </div>
                 
                 {calc && (
                   <div className="flex items-center gap-2 text-sm">
-                    <span>{selectedItem.quantity} {getUnitLabel(selectedItem.unit, false)}</span>
+                    <span>{selectedItem.quantity} {getUnitLabel(selectedItem.unit)}</span>
                     <ArrowRight className="w-3 h-3 text-muted-foreground" />
                     <span className={cn(
                       'font-semibold',
                       isEntrada ? 'text-success' : calc.final < 0 ? 'text-destructive' : 'text-destructive'
                     )}>
-                      {calc.final.toFixed(2)} {getUnitLabel(selectedItem.unit, false)}
+                      {calc.final.toFixed(2)} {getUnitLabel(selectedItem.unit)}
                     </span>
                     {calc.final < 0 && (
                       <span className="text-xs text-destructive">(Estoque insuficiente)</span>
@@ -398,40 +391,20 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                 )}
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="quantity">Quantidade</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="0"
-                    className="bg-input border-border text-lg font-semibold"
-                    required
-                    autoFocus
-                  />
-                </div>
-                
-                {hasSubUnit && (
-                  <div className="w-28 space-y-2">
-                    <Label>Unidade</Label>
-                    <Select 
-                      value={useSubUnit ? 'sub' : 'main'} 
-                      onValueChange={(v) => setUseSubUnit(v === 'sub')}
-                    >
-                      <SelectTrigger className="bg-input border-border">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="main">{getUnitLabel(selectedItem.unit, false)}</SelectItem>
-                        <SelectItem value="sub">{unitConversions[selectedItem.unit].subUnit}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantidade ({getUnitLabel(selectedItem.unit)})</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder={`Ex: 0.5 para meio ${getUnitLabel(selectedItem.unit)}`}
+                  className="bg-input border-border text-lg font-semibold"
+                  required
+                  autoFocus
+                />
               </div>
 
               <div className="space-y-2">
