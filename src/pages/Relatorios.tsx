@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ReportMovementList } from '@/components/inventory/ReportMovementList';
-import { useStockMovements, useMovementDates, useEmployeeRanking, useProductEditHistory } from '@/hooks/useInventory';
-import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useStockMovements, useMovementDates, useEmployeeRanking, useProductEditHistory, StockMovement } from '@/hooks/useInventory';
+import { useIsAdmin, useIsDono, useAllUsersWithRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown } from 'lucide-react';
+import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { format, subDays, addDays, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,20 @@ export default function Relatorios() {
   const { data: ranking = [] } = useEmployeeRanking();
   const { data: editHistory = [], isLoading: isLoadingEdits } = useProductEditHistory(formattedDate);
   const { isAdmin } = useIsAdmin();
+  const { isDono } = useIsDono();
+  const { data: usersWithRoles = [] } = useAllUsersWithRoles();
+
+  // Create a map of user_id to role for quick lookup
+  const userRolesMap = new Map(usersWithRoles.map(u => [u.id, u.role]));
+
+  // Separate movements by user role
+  const getMovementsByRole = (role: 'funcionario' | 'admin' | 'dono') => {
+    return movements.filter(m => userRolesMap.get(m.user_id) === role);
+  };
+
+  const funcionarioMovements = getMovementsByRole('funcionario');
+  const gestorMovements = getMovementsByRole('admin');
+  const donoMovements = getMovementsByRole('dono');
 
   const entradas = movements.filter(m => m.movement_type === 'entrada');
   const saidas = movements.filter(m => m.movement_type === 'saida');
@@ -45,28 +59,14 @@ export default function Relatorios() {
     return movementDates.includes(dateStr);
   };
 
-  // Get recent days with movements for quick access
-  const recentDatesWithMovements = movementDates.slice(0, 7).map(d => parseISO(d));
-
-  // Group movements by product
-  const groupedByProduct = movements.reduce((acc, m) => {
-    const productName = m.inventory_items?.name || 'Produto Desconhecido';
-    if (!acc[productName]) {
-      acc[productName] = {
-        name: productName,
-        unit: m.inventory_items?.unit || 'unidade',
-        price: Number(m.inventory_items?.price) || 0,
-        entradas: [],
-        saidas: [],
-      };
-    }
-    if (m.movement_type === 'entrada') {
-      acc[productName].entradas.push(m);
-    } else {
-      acc[productName].saidas.push(m);
-    }
-    return acc;
-  }, {} as Record<string, any>);
+  // Calculate totals for a specific set of movements
+  const calculateTotals = (movs: StockMovement[]) => {
+    const ent = movs.filter(m => m.movement_type === 'entrada');
+    const sai = movs.filter(m => m.movement_type === 'saida');
+    const valorEnt = ent.reduce((sum, m) => sum + (Number(m.inventory_items?.price || 0) * Number(m.quantity)), 0);
+    const valorSai = sai.reduce((sum, m) => sum + (Number(m.inventory_items?.price || 0) * Number(m.quantity)), 0);
+    return { entradas: ent.length, saidas: sai.length, valorEntradas: valorEnt, valorSaidas: valorSai };
+  };
 
   const handleDownloadCSV = () => {
     if (movements.length === 0) return;
@@ -86,7 +86,7 @@ export default function Relatorios() {
       '',
     ];
 
-    // Financial summary only for admin
+    // Financial summary only for admin/dono
     if (isAdmin) {
       lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
       lines.push('│                           RESUMO FINANCEIRO                                  │');
@@ -108,48 +108,136 @@ export default function Relatorios() {
     lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
     lines.push('');
 
-    // Detailed movements table
-    lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
-    lines.push('│                        MOVIMENTAÇÕES DETALHADAS                              │');
-    lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
-    lines.push('');
-    
-    if (isAdmin) {
-      lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
-    } else {
-      lines.push('Horário,Tipo,Produto,Quantidade,Responsável,Observações');
-    }
-    lines.push('');
+    // For Dono: Add separated sections by role
+    if (isDono) {
+      // Funcionários section
+      if (funcionarioMovements.length > 0) {
+        const funcTotals = calculateTotals(funcionarioMovements);
+        lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+        lines.push('│                    👷 MOVIMENTAÇÕES DOS FUNCIONÁRIOS                          │');
+        lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+        lines.push(`│  📦 Total: ${funcionarioMovements.length} | Entradas: ${funcTotals.entradas} | Saídas: ${funcTotals.saidas}`.padEnd(79) + '│');
+        lines.push(`│  💰 Valor Entradas: R$ ${funcTotals.valorEntradas.toFixed(2)} | Valor Saídas: R$ ${funcTotals.valorSaidas.toFixed(2)}`.padEnd(79) + '│');
+        lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+        lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
+        funcionarioMovements.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(m => {
+          const isEntrada = m.movement_type === 'entrada';
+          const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+          const price = Number(m.inventory_items?.price) || 0;
+          lines.push([
+            format(new Date(m.created_at), "HH:mm"),
+            tipo,
+            `"${m.inventory_items?.name || ''}"`,
+            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `R$ ${price.toFixed(2).replace('.', ',')}`,
+            `"${m.profiles?.full_name || ''}"`,
+            `"${m.notes || '-'}"`
+          ].join(','));
+        });
+        lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+        lines.push('');
+      }
 
-    sortedMovements.forEach(m => {
-      const isEntrada = m.movement_type === 'entrada';
-      const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
-      const price = Number(m.inventory_items?.price) || 0;
+      // Gestores section
+      if (gestorMovements.length > 0) {
+        const gestorTotals = calculateTotals(gestorMovements);
+        lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+        lines.push('│                    👔 MOVIMENTAÇÕES DOS GESTORES                              │');
+        lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+        lines.push(`│  📦 Total: ${gestorMovements.length} | Entradas: ${gestorTotals.entradas} | Saídas: ${gestorTotals.saidas}`.padEnd(79) + '│');
+        lines.push(`│  💰 Valor Entradas: R$ ${gestorTotals.valorEntradas.toFixed(2)} | Valor Saídas: R$ ${gestorTotals.valorSaidas.toFixed(2)}`.padEnd(79) + '│');
+        lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+        lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
+        gestorMovements.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(m => {
+          const isEntrada = m.movement_type === 'entrada';
+          const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+          const price = Number(m.inventory_items?.price) || 0;
+          lines.push([
+            format(new Date(m.created_at), "HH:mm"),
+            tipo,
+            `"${m.inventory_items?.name || ''}"`,
+            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `R$ ${price.toFixed(2).replace('.', ',')}`,
+            `"${m.profiles?.full_name || ''}"`,
+            `"${m.notes || '-'}"`
+          ].join(','));
+        });
+        lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+        lines.push('');
+      }
+
+      // Dono section (own movements)
+      if (donoMovements.length > 0) {
+        const donoTotals = calculateTotals(donoMovements);
+        lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+        lines.push('│                    👑 MOVIMENTAÇÕES DO DONO                                   │');
+        lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+        lines.push(`│  📦 Total: ${donoMovements.length} | Entradas: ${donoTotals.entradas} | Saídas: ${donoTotals.saidas}`.padEnd(79) + '│');
+        lines.push(`│  💰 Valor Entradas: R$ ${donoTotals.valorEntradas.toFixed(2)} | Valor Saídas: R$ ${donoTotals.valorSaidas.toFixed(2)}`.padEnd(79) + '│');
+        lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+        lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
+        donoMovements.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(m => {
+          const isEntrada = m.movement_type === 'entrada';
+          const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+          const price = Number(m.inventory_items?.price) || 0;
+          lines.push([
+            format(new Date(m.created_at), "HH:mm"),
+            tipo,
+            `"${m.inventory_items?.name || ''}"`,
+            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `R$ ${price.toFixed(2).replace('.', ',')}`,
+            `"${m.profiles?.full_name || ''}"`,
+            `"${m.notes || '-'}"`
+          ].join(','));
+        });
+        lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+        lines.push('');
+      }
+    } else {
+      // Regular detailed movements table for non-dono
+      lines.push('┌───────────────────────────────────────────────────────────────────────────────┐');
+      lines.push('│                        MOVIMENTAÇÕES DETALHADAS                              │');
+      lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
+      lines.push('');
       
       if (isAdmin) {
-        lines.push([
-          format(new Date(m.created_at), "HH:mm"),
-          tipo,
-          `"${m.inventory_items?.name || ''}"`,
-          `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
-          `R$ ${price.toFixed(2).replace('.', ',')}`,
-          `"${m.profiles?.full_name || ''}"`,
-          `"${m.notes || '-'}"`
-        ].join(','));
+        lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
       } else {
-        lines.push([
-          format(new Date(m.created_at), "HH:mm"),
-          tipo,
-          `"${m.inventory_items?.name || ''}"`,
-          `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
-          `"${m.profiles?.full_name || ''}"`,
-          `"${m.notes || '-'}"`
-        ].join(','));
+        lines.push('Horário,Tipo,Produto,Quantidade,Responsável,Observações');
       }
-    });
+      lines.push('');
 
-    lines.push('');
-    lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+      sortedMovements.forEach(m => {
+        const isEntrada = m.movement_type === 'entrada';
+        const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+        const price = Number(m.inventory_items?.price) || 0;
+        
+        if (isAdmin) {
+          lines.push([
+            format(new Date(m.created_at), "HH:mm"),
+            tipo,
+            `"${m.inventory_items?.name || ''}"`,
+            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `R$ ${price.toFixed(2).replace('.', ',')}`,
+            `"${m.profiles?.full_name || ''}"`,
+            `"${m.notes || '-'}"`
+          ].join(','));
+        } else {
+          lines.push([
+            format(new Date(m.created_at), "HH:mm"),
+            tipo,
+            `"${m.inventory_items?.name || ''}"`,
+            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `"${m.profiles?.full_name || ''}"`,
+            `"${m.notes || '-'}"`
+          ].join(','));
+        }
+      });
+
+      lines.push('');
+      lines.push('└───────────────────────────────────────────────────────────────────────────────┘');
+    }
+
     lines.push('');
     lines.push(`📅 Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`);
 
@@ -164,6 +252,69 @@ export default function Relatorios() {
 
   const navigateDay = (direction: 'prev' | 'next') => {
     setSelectedDate(prev => direction === 'prev' ? subDays(prev, 1) : addDays(prev, 1));
+  };
+
+  // Render movements section grouped by role for Dono
+  const renderDonoMovementsView = () => {
+    return (
+      <div className="space-y-6">
+        {/* Funcionários */}
+        {funcionarioMovements.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="w-5 h-5 text-blue-500" />
+              <span>Funcionários</span>
+              <span className="text-sm font-normal text-muted-foreground">
+                ({funcionarioMovements.length} movimentações)
+              </span>
+            </div>
+            <div className="border border-blue-500/20 rounded-xl overflow-hidden">
+              <ReportMovementList movements={funcionarioMovements} />
+            </div>
+          </div>
+        )}
+
+        {/* Gestores */}
+        {gestorMovements.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="w-5 h-5 text-purple-500" />
+              <span>Gestores</span>
+              <span className="text-sm font-normal text-muted-foreground">
+                ({gestorMovements.length} movimentações)
+              </span>
+            </div>
+            <div className="border border-purple-500/20 rounded-xl overflow-hidden">
+              <ReportMovementList movements={gestorMovements} />
+            </div>
+          </div>
+        )}
+
+        {/* Dono */}
+        {donoMovements.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="w-5 h-5 text-amber-500" />
+              <span>Dono</span>
+              <span className="text-sm font-normal text-muted-foreground">
+                ({donoMovements.length} movimentações)
+              </span>
+            </div>
+            <div className="border border-amber-500/20 rounded-xl overflow-hidden">
+              <ReportMovementList movements={donoMovements} />
+            </div>
+          </div>
+        )}
+
+        {/* If no movements at all */}
+        {movements.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg">Nenhuma movimentação neste dia</p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -183,14 +334,17 @@ export default function Relatorios() {
             </div>
           </div>
 
-          <Button
-            onClick={handleDownloadCSV}
-            disabled={movements.length === 0}
-            className="bg-gradient-amber text-primary-foreground hover:opacity-90"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Baixar Relatório
-          </Button>
+          {/* Download button only for admin/dono */}
+          {isAdmin && (
+            <Button
+              onClick={handleDownloadCSV}
+              disabled={movements.length === 0}
+              className="bg-gradient-amber text-primary-foreground hover:opacity-90"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Baixar Relatório
+            </Button>
+          )}
         </div>
 
         {/* Date Selector */}
@@ -260,21 +414,90 @@ export default function Relatorios() {
 
         </div>
 
-        {/* Tabs for Movements and Edits */}
+        {/* Content - Different for each role */}
         <div className="glass rounded-2xl p-4 md:p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="movements" className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Movimentações
-              </TabsTrigger>
-              <TabsTrigger value="edits" className="flex items-center gap-2">
-                <Pencil className="w-4 h-4" />
-                Edições de Produtos
-              </TabsTrigger>
-            </TabsList>
+          {/* For Admin (Gestor) or Dono: Show tabs with movements and edits */}
+          {isAdmin ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="movements" className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Movimentações
+                </TabsTrigger>
+                <TabsTrigger value="edits" className="flex items-center gap-2">
+                  <Pencil className="w-4 h-4" />
+                  Edições de Produtos
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="movements">
+              <TabsContent value="movements">
+                <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
+                  Movimentações de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                </h2>
+                
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-20 rounded-xl bg-secondary/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : isDono ? (
+                  renderDonoMovementsView()
+                ) : (
+                  <ReportMovementList movements={movements} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="edits">
+                <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
+                  Edições de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                </h2>
+                
+                {isLoadingEdits ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-16 rounded-xl bg-secondary/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : editHistory.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Pencil className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Nenhuma edição neste dia</p>
+                    <p className="text-sm">As alterações em produtos aparecerão aqui</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {editHistory.map((edit: any) => (
+                      <div
+                        key={edit.id}
+                        className="p-4 rounded-xl bg-secondary/30 border border-border"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                              <Pencil className="w-5 h-5 text-warning" />
+                            </div>
+                            <div>
+                              <p className="font-semibold">{edit.item_name_snapshot}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {edit.field_changed}: <span className="text-destructive line-through">{edit.old_value}</span> → <span className="text-success">{edit.new_value}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right text-sm text-muted-foreground">
+                            <p>{format(new Date(edit.created_at), 'HH:mm')}</p>
+                            <p>{edit.user_name}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          ) : (
+            // For Funcionário: Show only movements (no tabs)
+            <>
               <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
                 Movimentações de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
               </h2>
@@ -288,55 +511,8 @@ export default function Relatorios() {
               ) : (
                 <ReportMovementList movements={movements} />
               )}
-            </TabsContent>
-
-            <TabsContent value="edits">
-              <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
-                Edições de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-              </h2>
-              
-              {isLoadingEdits ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-16 rounded-xl bg-secondary/50 animate-pulse" />
-                  ))}
-                </div>
-              ) : editHistory.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Pencil className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg">Nenhuma edição neste dia</p>
-                  <p className="text-sm">As alterações em produtos aparecerão aqui</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {editHistory.map((edit: any) => (
-                    <div
-                      key={edit.id}
-                      className="p-4 rounded-xl bg-secondary/30 border border-border"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                            <Pencil className="w-5 h-5 text-warning" />
-                          </div>
-                          <div>
-                            <p className="font-semibold">{edit.item_name_snapshot}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {edit.field_changed}: <span className="text-destructive line-through">{edit.old_value}</span> → <span className="text-success">{edit.new_value}</span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right text-sm text-muted-foreground">
-                          <p>{format(new Date(edit.created_at), 'HH:mm')}</p>
-                          <p>{edit.user_name}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            </>
+          )}
         </div>
       </div>
     </MainLayout>

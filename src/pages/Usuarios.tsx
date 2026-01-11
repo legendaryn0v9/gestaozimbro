@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, useDeleteUser, useUpdateUserSector, AppRole } from '@/hooks/useUserRoles';
+import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, useIsDono, useDeleteUser, useUpdateUserSector, AppRole } from '@/hooks/useUserRoles';
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, RefreshCw } from 'lucide-react';
+import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, RefreshCw, Star } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function Usuarios() {
   const { user } = useAuth();
   const { isAdmin, isLoading: isLoadingRole } = useIsAdmin();
+  const { isDono } = useIsDono();
   const { data: users = [], isLoading } = useAllUsersWithRoles();
   const updateRole = useUpdateUserRole();
   const updateSector = useUpdateUserSector();
@@ -166,15 +167,19 @@ export default function Usuarios() {
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <Avatar className={`h-12 w-12 border-2 ${
-                        u.role === 'admin' 
-                          ? 'border-amber-500/50' 
-                          : 'border-blue-500/50'
+                        u.role === 'dono' 
+                          ? 'border-purple-500/50' 
+                          : u.role === 'admin' 
+                            ? 'border-amber-500/50' 
+                            : 'border-blue-500/50'
                       }`}>
                         <AvatarImage src={u.avatar_url || undefined} alt={u.full_name} />
                         <AvatarFallback className={
-                          u.role === 'admin' 
-                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white' 
-                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-white'
+                          u.role === 'dono'
+                            ? 'bg-gradient-to-br from-purple-500 to-pink-600 text-white'
+                            : u.role === 'admin' 
+                              ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white' 
+                              : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-white'
                         }>
                           {getInitials(u.full_name)}
                         </AvatarFallback>
@@ -232,16 +237,24 @@ export default function Usuarios() {
                           </Select>
                         )}
 
-                        {/* Role Select */}
+                        {/* Role Select - Dono can assign all roles, Gestor cannot assign Dono */}
                         <Select
                           value={u.role}
                           onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
-                          disabled={updateRole.isPending}
+                          disabled={updateRole.isPending || (!isDono && u.role === 'dono')}
                         >
                           <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            {isDono && (
+                              <SelectItem value="dono">
+                                <div className="flex items-center gap-2">
+                                  <Star className="w-4 h-4 text-purple-500" />
+                                  Dono
+                                </div>
+                              </SelectItem>
+                            )}
                             <SelectItem value="admin">
                               <div className="flex items-center gap-2">
                                 <Crown className="w-4 h-4 text-amber-500" />
@@ -322,11 +335,13 @@ export default function Usuarios() {
                         </Badge>
                       )}
                       <Badge className={
-                        u.role === 'admin' 
-                          ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
-                          : 'bg-blue-500/20 text-blue-500 border-blue-500/50'
+                        u.role === 'dono'
+                          ? 'bg-purple-500/20 text-purple-500 border-purple-500/50'
+                          : u.role === 'admin' 
+                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
+                            : 'bg-blue-500/20 text-blue-500 border-blue-500/50'
                       }>
-                        {u.role === 'admin' ? 'Gestor' : 'Funcionário'}
+                        {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
                       </Badge>
                     </div>
                   </div>
