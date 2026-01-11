@@ -129,7 +129,11 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          item_id: string
+          item_id: string | null
+          item_name_snapshot: string | null
+          item_price: number | null
+          item_sector: string | null
+          item_unit: string | null
           movement_type: Database["public"]["Enums"]["movement_type"]
           notes: string | null
           quantity: number
@@ -138,7 +142,11 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          item_id: string
+          item_id?: string | null
+          item_name_snapshot?: string | null
+          item_price?: number | null
+          item_sector?: string | null
+          item_unit?: string | null
           movement_type: Database["public"]["Enums"]["movement_type"]
           notes?: string | null
           quantity: number
@@ -147,7 +155,11 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          item_id?: string
+          item_id?: string | null
+          item_name_snapshot?: string | null
+          item_price?: number | null
+          item_sector?: string | null
+          item_unit?: string | null
           movement_type?: Database["public"]["Enums"]["movement_type"]
           notes?: string | null
           quantity?: number
@@ -246,7 +258,11 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
-          item_id: string
+          item_id: string | null
+          item_name_snapshot: string | null
+          item_price: number | null
+          item_sector: string | null
+          item_unit: string | null
           movement_type: Database["public"]["Enums"]["movement_type"]
           notes: string | null
           quantity: number
