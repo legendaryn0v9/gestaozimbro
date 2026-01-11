@@ -476,7 +476,7 @@ export default function Cozinha() {
           defaultCategory={addDialogCategory}
         />
 
-        <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" />
+        <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" sector="cozinha" />
 
         <MovementDialog
           open={saidaDialogOpen}
@@ -486,6 +486,7 @@ export default function Cozinha() {
           }}
           type="saida"
           preselectedItemId={selectedItemId}
+          sector="cozinha"
         />
 
         <CategoryManagerDialog
