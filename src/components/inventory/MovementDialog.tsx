@@ -101,11 +101,17 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
     );
   }, [items, searchQuery]);
 
-  // Organize items by categories
+  // Organize items by categories - show ALL items properly
   const organizedItems = useMemo(() => {
-    const categories = userSector === 'bar' ? barCategories : 
-                       userSector === 'cozinha' ? cozinhaCategories :
-                       [...barCategories, ...cozinhaCategories];
+    // For admin, show all categories; for employee, filter by sector
+    let categories = isAdmin || !userSector
+      ? [...barCategories, ...cozinhaCategories]
+      : userSector === 'bar' 
+        ? barCategories 
+        : cozinhaCategories;
+
+    // Sort categories by sort_order
+    categories = [...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
     const grouped: Array<{
       category: typeof categories[0];
@@ -116,53 +122,68 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId }: 
       }>;
     }> = [];
 
+    // Track which items have been assigned to categories
+    const assignedItemIds = new Set<string>();
+
     categories.forEach(category => {
-      const categoryItems = filteredItems.filter(item => {
-        const itemCategory = item.category?.split(' - ')[0]?.trim();
-        return itemCategory === category.name;
+      // Find ALL items that belong to this category
+      const allCategoryItems = filteredItems.filter(item => {
+        if (!item.category) return false;
+        const itemCategoryName = item.category.split(' - ')[0]?.trim();
+        return itemCategoryName === category.name;
       });
 
-      if (categoryItems.length > 0 || category.subcategories.some(sub => 
-        filteredItems.some(item => item.category?.includes(sub.name))
-      )) {
-        const subcategoryGroups: typeof grouped[0]['subcategories'] = [];
-        
-        category.subcategories.forEach(sub => {
-          const subItems = filteredItems.filter(item => {
-            const parts = item.category?.split(' - ');
-            const itemSubcategory = parts?.[1]?.trim();
-            return itemSubcategory === sub.name;
-          });
-          
-          if (subItems.length > 0) {
-            subcategoryGroups.push({
-              subcategory: sub,
-              items: subItems.sort((a, b) => a.name.localeCompare(b.name)),
-            });
-          }
+      const subcategoryGroups: typeof grouped[0]['subcategories'] = [];
+      
+      // Sort subcategories by sort_order
+      const sortedSubcategories = [...category.subcategories].sort(
+        (a, b) => (a.sort_order || 0) - (b.sort_order || 0)
+      );
+      
+      sortedSubcategories.forEach(sub => {
+        const subItems = filteredItems.filter(item => {
+          if (!item.category) return false;
+          const parts = item.category.split(' - ');
+          const itemCategoryName = parts[0]?.trim();
+          const itemSubcategoryName = parts[1]?.trim();
+          return itemCategoryName === category.name && itemSubcategoryName === sub.name;
         });
-
-        const directItems = categoryItems.filter(item => {
-          const parts = item.category?.split(' - ');
-          return parts?.length === 1;
-        }).sort((a, b) => a.name.localeCompare(b.name));
-
-        if (directItems.length > 0 || subcategoryGroups.length > 0) {
-          grouped.push({
-            category,
-            items: directItems,
-            subcategories: subcategoryGroups,
+        
+        if (subItems.length > 0) {
+          subItems.forEach(item => assignedItemIds.add(item.id));
+          subcategoryGroups.push({
+            subcategory: sub,
+            items: subItems.sort((a, b) => a.name.localeCompare(b.name)),
           });
         }
+      });
+
+      // Direct items are those in the category but NOT in any subcategory
+      const directItems = allCategoryItems.filter(item => {
+        const parts = item.category?.split(' - ');
+        // Item is direct if it has no subcategory part
+        return parts?.length === 1 || !parts?.[1]?.trim();
+      }).sort((a, b) => a.name.localeCompare(b.name));
+      
+      directItems.forEach(item => assignedItemIds.add(item.id));
+
+      // Only add category if it has items
+      if (directItems.length > 0 || subcategoryGroups.length > 0) {
+        grouped.push({
+          category,
+          items: directItems,
+          subcategories: subcategoryGroups,
+        });
       }
     });
 
+    // Uncategorized items - those without category or not matching any known category
     const uncategorized = filteredItems
-      .filter(item => !item.category)
+      .filter(item => !assignedItemIds.has(item.id))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     return { grouped, uncategorized };
-  }, [filteredItems, barCategories, cozinhaCategories, userSector]);
+  }, [filteredItems, barCategories, cozinhaCategories, userSector, isAdmin]);
 
   // Calculate final quantity for display
   const getFinalQuantity = () => {
