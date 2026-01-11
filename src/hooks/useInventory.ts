@@ -236,7 +236,14 @@ export function useUpdateItem() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...item }: Partial<InventoryItem> & { id: string }) => {
+    mutationFn: async ({ 
+      id, 
+      changes,
+      ...item 
+    }: Partial<InventoryItem> & { 
+      id: string; 
+      changes?: Array<{ field: string; oldValue: string; newValue: string }>;
+    }) => {
       const { data, error } = await supabase
         .from('inventory_items')
         .update(item)
@@ -245,10 +252,29 @@ export function useUpdateItem() {
         .single();
 
       if (error) throw error;
+
+      // Log changes to history if provided
+      if (changes && changes.length > 0) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          const historyRecords = changes.map(change => ({
+            item_id: id,
+            user_id: userData.user.id,
+            item_name_snapshot: data.name,
+            field_changed: change.field,
+            old_value: change.oldValue,
+            new_value: change.newValue,
+          }));
+
+          await supabase.from('product_edit_history').insert(historyRecords);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['product-edit-history'] });
       toast({
         title: 'Item atualizado!',
         description: 'O item foi atualizado com sucesso.',
@@ -261,6 +287,44 @@ export function useUpdateItem() {
         variant: 'destructive',
       });
     },
+  });
+}
+
+// Hook to fetch product edit history
+export function useProductEditHistory(date?: string) {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['product-edit-history', date, user?.id],
+    queryFn: async () => {
+      let query = supabase
+        .from('product_edit_history')
+        .select(`
+          *,
+          profiles(full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (date) {
+        const [y, m, d] = date.split('-').map(Number);
+        const startOfDay = new Date(y, (m ?? 1) - 1, d ?? 1, 0, 0, 0, 0);
+        const endOfDay = new Date(y, (m ?? 1) - 1, d ?? 1, 23, 59, 59, 999);
+
+        query = query
+          .gte('created_at', startOfDay.toISOString())
+          .lte('created_at', endOfDay.toISOString());
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return data?.map(record => ({
+        ...record,
+        user_name: (record.profiles as any)?.full_name || 'Desconhecido',
+      }));
+    },
+    enabled: !!user,
   });
 }
 

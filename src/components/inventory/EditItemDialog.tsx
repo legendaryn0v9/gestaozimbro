@@ -122,6 +122,45 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
       }
     }
     
+    // Track what changed for the edit history
+    const changes: Array<{ field: string; oldValue: string; newValue: string }> = [];
+    
+    if (name !== item.name) {
+      changes.push({ field: 'Nome', oldValue: item.name, newValue: name });
+    }
+    if (Number(quantity) !== item.quantity) {
+      changes.push({ 
+        field: 'Quantidade', 
+        oldValue: String(item.quantity), 
+        newValue: quantity 
+      });
+    }
+    if (unit !== item.unit) {
+      changes.push({ field: 'Unidade', oldValue: item.unit, newValue: unit });
+    }
+    if (Number(price) !== item.price) {
+      changes.push({ 
+        field: 'Preço', 
+        oldValue: String(item.price || 0), 
+        newValue: price || '0' 
+      });
+    }
+    if (categoryString !== item.category) {
+      changes.push({ 
+        field: 'Categoria', 
+        oldValue: item.category || 'Sem categoria', 
+        newValue: categoryString || 'Sem categoria' 
+      });
+    }
+    const newMinQty = minQuantity ? Number(minQuantity) : null;
+    if (newMinQty !== item.min_quantity) {
+      changes.push({ 
+        field: 'Qtd. Mínima', 
+        oldValue: String(item.min_quantity || 0), 
+        newValue: String(newMinQty || 0) 
+      });
+    }
+    
     updateItem.mutate(
       {
         id: item.id,
@@ -129,10 +168,11 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
         description: description || null,
         unit,
         quantity: Number(quantity),
-        min_quantity: minQuantity ? Number(minQuantity) : null,
+        min_quantity: newMinQty,
         price: price ? Number(price) : 0,
         category: categoryString,
         image_url: imagePreview,
+        changes: changes.length > 0 ? changes : undefined,
       },
       {
         onSuccess: () => {
