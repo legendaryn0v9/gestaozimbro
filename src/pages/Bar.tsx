@@ -39,6 +39,7 @@ export default function Bar() {
   
   const [search, setSearch] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addDialogCategory, setAddDialogCategory] = useState<string | undefined>();
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const [entradaDialogOpen, setEntradaDialogOpen] = useState(false);
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
@@ -56,11 +57,13 @@ export default function Bar() {
   }, [canAccessBar, sectorLoading, isAdmin, navigate]);
 
   const openAddDialog = (category?: string) => {
+    setAddDialogCategory(category);
     setAddDialogOpen(true);
   };
 
   const closeAddDialog = (open: boolean) => {
     setAddDialogOpen(open);
+    if (!open) setAddDialogCategory(undefined);
   };
 
   const { data: items = [], isLoading } = useInventoryItems('bar');
@@ -447,7 +450,12 @@ export default function Bar() {
           </div>
         )}
 
-        <AddItemDialog open={addDialogOpen} onOpenChange={closeAddDialog} defaultSector="bar" />
+        <AddItemDialog 
+          open={addDialogOpen} 
+          onOpenChange={closeAddDialog} 
+          defaultSector="bar" 
+          defaultCategory={addDialogCategory}
+        />
 
         <MovementDialog open={entradaDialogOpen} onOpenChange={setEntradaDialogOpen} type="entrada" sector="bar" />
 
