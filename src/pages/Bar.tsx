@@ -339,9 +339,11 @@ export default function Bar() {
 
                   {/* Items directly in category (no subcategory) */}
                   {categoryData.categoryItems.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:overflow-visible sm:pb-0">
                       {categoryData.categoryItems.map((item) => (
-                        <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
+                        <div key={item.id} className="min-w-[280px] sm:min-w-0 snap-start">
+                          <ItemCard item={item} onClick={() => handleItemClick(item.id)} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -349,6 +351,21 @@ export default function Bar() {
                   {/* Subcategory Tabs */}
                   {category.subcategories.length > 0 && (
                     <div className="flex flex-wrap gap-2">
+                      {/* All button */}
+                      <button
+                        onClick={() => handleSubcategoryChange(category.id, null)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                          selectedSubcategories[category.id] === null || selectedSubcategories[category.id] === undefined
+                            ? `bg-gradient-to-r ${category.gradient || 'from-amber-500 to-orange-600'} text-white shadow-md`
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        )}
+                      >
+                        Todos
+                        <span className="ml-1.5 text-xs opacity-75">
+                          ({categoryData.categoryItems.length + Object.values(categoryData.subcategories).reduce((acc, items) => acc + items.length, 0)})
+                        </span>
+                      </button>
                       {category.subcategories.map((sub) => {
                         const subItems = categoryData.subcategories[sub.name] || [];
                         const isSelected = selectedSubcategories[category.id] === sub.name;
@@ -380,9 +397,11 @@ export default function Bar() {
                     if (selectedSub) {
                       const subItems = categoryData.subcategories[selectedSub] || [];
                       return subItems.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+                        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:overflow-visible sm:pb-0">
                           {subItems.map((item) => (
-                            <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
+                            <div key={item.id} className="min-w-[280px] sm:min-w-0 snap-start">
+                              <ItemCard item={item} onClick={() => handleItemClick(item.id)} />
+                            </div>
                           ))}
                         </div>
                       ) : (
@@ -399,9 +418,11 @@ export default function Bar() {
                     ];
                     
                     return allItems.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
+                      <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:overflow-visible sm:pb-0">
                         {allItems.map((item) => (
-                          <ItemCard key={item.id} item={item} onClick={() => handleItemClick(item.id)} />
+                          <div key={item.id} className="min-w-[280px] sm:min-w-0 snap-start">
+                            <ItemCard item={item} onClick={() => handleItemClick(item.id)} />
+                          </div>
                         ))}
                       </div>
                     ) : null;
