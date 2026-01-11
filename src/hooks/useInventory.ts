@@ -96,20 +96,34 @@ export function useStockMovements(date?: string) {
       const { data, error } = await query;
       if (error) throw error;
 
-      return data?.map(movement => ({
-        id: movement.id,
-        item_id: movement.item_id,
-        user_id: movement.user_id,
-        movement_type: movement.movement_type,
-        quantity: movement.quantity,
-        notes: movement.notes,
-        created_at: movement.created_at,
-        item_name: (movement.inventory_items as any)?.name,
-        user_name: (movement.profiles as any)?.full_name,
-        sector: (movement.inventory_items as any)?.sector,
-        inventory_items: movement.inventory_items as any,
-        profiles: movement.profiles as any,
-      })) as StockMovement[];
+      return data?.map(movement => {
+        // Use snapshot data if item was deleted, otherwise use live data
+        const itemData = movement.inventory_items as any;
+        const itemName = itemData?.name || (movement as any).item_name_snapshot || 'Item excluído';
+        const itemSector = itemData?.sector || (movement as any).item_sector;
+        const itemUnit = itemData?.unit || (movement as any).item_unit;
+        const itemPrice = itemData?.price ?? (movement as any).item_price ?? 0;
+        
+        return {
+          id: movement.id,
+          item_id: movement.item_id,
+          user_id: movement.user_id,
+          movement_type: movement.movement_type,
+          quantity: movement.quantity,
+          notes: movement.notes,
+          created_at: movement.created_at,
+          item_name: itemName,
+          user_name: (movement.profiles as any)?.full_name,
+          sector: itemSector,
+          inventory_items: itemData || {
+            name: itemName,
+            sector: itemSector,
+            unit: itemUnit,
+            price: itemPrice,
+          },
+          profiles: movement.profiles as any,
+        };
+      }) as StockMovement[];
     },
     enabled: !!user,
   });
