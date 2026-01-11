@@ -1,22 +1,25 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ReportMovementList } from '@/components/inventory/ReportMovementList';
-import { useStockMovements, useMovementDates, useEmployeeRanking } from '@/hooks/useInventory';
+import { useStockMovements, useMovementDates, useEmployeeRanking, useProductEditHistory } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown } from 'lucide-react';
 import { format, subDays, addDays, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export default function Relatorios() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<string>('movements');
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const { data: movements = [], isLoading } = useStockMovements(formattedDate);
   const { data: movementDates = [] } = useMovementDates();
   const { data: ranking = [] } = useEmployeeRanking();
+  const { data: editHistory = [], isLoading: isLoadingEdits } = useProductEditHistory(formattedDate);
   const { isAdmin } = useIsAdmin();
 
   const entradas = movements.filter(m => m.movement_type === 'entrada');
@@ -257,22 +260,83 @@ export default function Relatorios() {
 
         </div>
 
-
-        {/* Movement List */}
+        {/* Tabs for Movements and Edits */}
         <div className="glass rounded-2xl p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
-            Movimentações de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-          </h2>
-          
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 rounded-xl bg-secondary/50 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <ReportMovementList movements={movements} />
-          )}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="movements" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Movimentações
+              </TabsTrigger>
+              <TabsTrigger value="edits" className="flex items-center gap-2">
+                <Pencil className="w-4 h-4" />
+                Edições de Produtos
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="movements">
+              <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
+                Movimentações de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+              </h2>
+              
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-20 rounded-xl bg-secondary/50 animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <ReportMovementList movements={movements} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="edits">
+              <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
+                Edições de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+              </h2>
+              
+              {isLoadingEdits ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 rounded-xl bg-secondary/50 animate-pulse" />
+                  ))}
+                </div>
+              ) : editHistory.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Pencil className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">Nenhuma edição neste dia</p>
+                  <p className="text-sm">As alterações em produtos aparecerão aqui</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {editHistory.map((edit: any) => (
+                    <div
+                      key={edit.id}
+                      className="p-4 rounded-xl bg-secondary/30 border border-border"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                            <Pencil className="w-5 h-5 text-warning" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{edit.item_name_snapshot}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {edit.field_changed}: <span className="text-destructive line-through">{edit.old_value}</span> → <span className="text-success">{edit.new_value}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right text-sm text-muted-foreground">
+                          <p>{format(new Date(edit.created_at), 'HH:mm')}</p>
+                          <p>{edit.user_name}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </MainLayout>

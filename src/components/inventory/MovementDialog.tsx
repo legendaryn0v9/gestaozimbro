@@ -314,8 +314,8 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                 </div>
               </div>
 
-              {/* Items List with improved scrolling */}
-              <ScrollArea className="flex-1 min-h-[200px] max-h-[400px] px-4">
+              {/* Items List with improved scrolling - use native scrolling for better desktop support */}
+              <div className="flex-1 overflow-y-auto px-4 min-h-[200px] max-h-[50vh]">
                 <div className="space-y-4 pb-4">
                   {organizedItems.grouped.map(({ category, items: directItems, subcategories }) => {
                     const IconComponent = getIconComponent(category.icon);
@@ -367,7 +367,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </>
           )}
 

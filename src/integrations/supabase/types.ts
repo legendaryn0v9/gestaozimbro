@@ -92,6 +92,54 @@ export type Database = {
         }
         Relationships: []
       }
+      product_edit_history: {
+        Row: {
+          created_at: string
+          field_changed: string
+          id: string
+          item_id: string | null
+          item_name_snapshot: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_changed: string
+          id?: string
+          item_id?: string | null
+          item_name_snapshot: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          field_changed?: string
+          id?: string
+          item_id?: string | null
+          item_name_snapshot?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_edit_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_edit_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -278,7 +326,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "funcionario"
-      movement_type: "entrada" | "saida"
+      movement_type: "entrada" | "saida" | "edicao"
       sector_type: "bar" | "cozinha"
       unit_type: "unidade" | "kg" | "litro" | "caixa" | "pacote"
     }
@@ -409,7 +457,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "funcionario"],
-      movement_type: ["entrada", "saida"],
+      movement_type: ["entrada", "saida", "edicao"],
       sector_type: ["bar", "cozinha"],
       unit_type: ["unidade", "kg", "litro", "caixa", "pacote"],
     },
