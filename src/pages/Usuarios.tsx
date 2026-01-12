@@ -11,6 +11,7 @@ import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, 
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
+import { EditEmployeeDialog } from '@/components/users/EditEmployeeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -290,35 +291,48 @@ export default function Usuarios() {
                           </Button>
                         )}
 
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir <strong>{u.full_name}</strong>? 
-                                Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteUser(u.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        {/* Edit Employee Button - Only for Dono */}
+                        {isDono && (
+                          <EditEmployeeDialog user={{
+                            id: u.id,
+                            full_name: u.full_name,
+                            phone: u.phone,
+                            sector: u.sector
+                          }} />
+                        )}
+
+                        {/* Delete Button - Only for Dono */}
+                        {isDono && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 text-destructive hover:bg-destructive/10"
                               >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir <strong>{u.full_name}</strong>? 
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteUser(u.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </>
                     )}
                     

@@ -57,9 +57,9 @@ serve(async (req: Request) => {
       .eq("user_id", requestingUser.id)
       .single();
 
-    if (!roleData || roleData.role !== "admin") {
+    if (!roleData || (roleData.role !== "admin" && roleData.role !== "dono")) {
       return new Response(
-        JSON.stringify({ error: "Apenas gerentes podem criar funcionários" }),
+        JSON.stringify({ error: "Apenas gerentes e donos podem criar funcionários" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
