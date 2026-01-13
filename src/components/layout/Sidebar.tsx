@@ -12,10 +12,11 @@ import {
   Crown,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { useIsAdmin } from '@/hooks/useUserRoles';
+import { useIsAdmin, useIsDono } from '@/hooks/useUserRoles';
 import { useCurrentUserProfile } from '@/hooks/useUserProfile';
 import { useUserSector } from '@/hooks/useUserSector';
 import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import logoImg from '@/assets/logo.png';
@@ -41,6 +42,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { isDono } = useIsDono();
   const { data: profile } = useCurrentUserProfile(user?.id);
   const { sector } = useUserSector();
 
@@ -134,13 +136,24 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-sidebar-border">
               <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name} />
-              <AvatarFallback className={isAdmin ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-500'}>
+              <AvatarFallback className={
+                isDono 
+                  ? 'bg-purple-500/20 text-purple-500' 
+                  : isAdmin 
+                    ? 'bg-amber-500/20 text-amber-500' 
+                    : 'bg-blue-500/20 text-blue-500'
+              }>
                 {getInitials(profile?.full_name)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                {isAdmin ? (
+                {isDono ? (
+                  <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/50 text-xs">
+                    <Star className="w-3 h-3 mr-1" />
+                    Dono
+                  </Badge>
+                ) : isAdmin ? (
                   <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
                     <Crown className="w-3 h-3 mr-1" />
                     Gestor
