@@ -104,16 +104,16 @@ export default function Usuarios() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleRoleChange = (userId: string, newRole: AppRole) => {
-    updateRole.mutate({ userId, newRole });
+  const handleRoleChange = (userId: string, newRole: AppRole, userName?: string, oldRole?: AppRole) => {
+    updateRole.mutate({ userId, newRole, userName, oldRole });
   };
 
-  const handleSectorChange = (userId: string, sector: 'bar' | 'cozinha' | null) => {
-    updateSector.mutate({ userId, sector });
+  const handleSectorChange = (userId: string, sector: 'bar' | 'cozinha' | null, userName?: string, oldSector?: string | null) => {
+    updateSector.mutate({ userId, sector, userName, oldSector });
   };
 
-  const handleDeleteUser = (userId: string) => {
-    deleteUser.mutate(userId);
+  const handleDeleteUser = (userId: string, userName?: string) => {
+    deleteUser.mutate({ userId, userName });
   };
 
   const getInitials = (name: string) => {
@@ -215,7 +215,7 @@ export default function Usuarios() {
                         {u.role === 'funcionario' && (
                           <Select
                             value={u.sector || 'none'}
-                            onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : value as 'bar' | 'cozinha')}
+                            onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : value as 'bar' | 'cozinha', u.full_name, u.sector)}
                             disabled={updateSector.isPending}
                           >
                             <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
@@ -242,7 +242,7 @@ export default function Usuarios() {
                         {isDono && (
                           <Select
                             value={u.role}
-                            onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
+                            onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
                             disabled={updateRole.isPending}
                           >
                             <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
@@ -324,7 +324,7 @@ export default function Usuarios() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDeleteUser(u.id)}
+                                  onClick={() => handleDeleteUser(u.id, u.full_name)}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Excluir

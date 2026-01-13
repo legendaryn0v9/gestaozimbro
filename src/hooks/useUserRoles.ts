@@ -111,9 +111,10 @@ export function useAllUsersWithRoles() {
 export function useUpdateUserRole() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
+    mutationFn: async ({ userId, newRole, userName, oldRole }: { userId: string; newRole: AppRole; userName?: string; oldRole?: AppRole }) => {
       // Check if role exists
       const { data: existing } = await supabase
         .from('user_roles')
@@ -133,10 +134,22 @@ export function useUpdateUserRole() {
           .insert({ user_id: userId, role: newRole });
         if (error) throw error;
       }
+
+      // Log the action
+      if (user) {
+        await supabase.from('admin_actions').insert({
+          user_id: user.id,
+          action_type: 'update_role',
+          target_user_id: userId,
+          target_user_name: userName || null,
+          details: { old_role: oldRole, new_role: newRole },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
       queryClient.invalidateQueries({ queryKey: ['user-role'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
       toast({
         title: 'Cargo atualizado!',
         description: 'O cargo do usuário foi alterado com sucesso.',
@@ -155,19 +168,32 @@ export function useUpdateUserRole() {
 export function useUpdateUserSector() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ userId, sector }: { userId: string; sector: 'bar' | 'cozinha' | null }) => {
+    mutationFn: async ({ userId, sector, userName, oldSector }: { userId: string; sector: 'bar' | 'cozinha' | null; userName?: string; oldSector?: string | null }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ sector })
         .eq('id', userId);
       
       if (error) throw error;
+
+      // Log the action
+      if (user) {
+        await supabase.from('admin_actions').insert({
+          user_id: user.id,
+          action_type: 'update_sector',
+          target_user_id: userId,
+          target_user_name: userName || null,
+          details: { old_sector: oldSector, new_sector: sector },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
       queryClient.invalidateQueries({ queryKey: ['user-sector'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
       toast({
         title: 'Setor atualizado!',
         description: 'O setor do funcionário foi alterado com sucesso.',
@@ -186,9 +212,21 @@ export function useUpdateUserSector() {
 export function useDeleteUser() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async ({ userId, userName }: { userId: string; userName?: string }) => {
+      // Log the action before deleting (so we still have the target info)
+      if (user) {
+        await supabase.from('admin_actions').insert({
+          user_id: user.id,
+          action_type: 'delete_employee',
+          target_user_id: userId,
+          target_user_name: userName || null,
+          details: null,
+        });
+      }
+
       // Delete user role first
       const { error: roleError } = await supabase
         .from('user_roles')
@@ -207,6 +245,7 @@ export function useDeleteUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
       toast({
         title: 'Usuário excluído!',
         description: 'O usuário foi removido do sistema.',
