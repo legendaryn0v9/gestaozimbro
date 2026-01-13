@@ -84,12 +84,22 @@ export function CreateEmployeeDialog() {
         throw new Error(data.error);
       }
 
+      // Log the action
+      await supabase.from('admin_actions').insert({
+        user_id: session.user.id,
+        action_type: 'create_employee',
+        target_user_id: data.user?.id || null,
+        target_user_name: fullName,
+        details: { phone, sector },
+      });
+
       toast({
         title: 'Funcionário criado!',
         description: `${fullName} foi adicionado com sucesso.`,
       });
 
       queryClient.invalidateQueries({ queryKey: ['all-users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
       resetForm();
       setOpen(false);
     } catch (error: any) {

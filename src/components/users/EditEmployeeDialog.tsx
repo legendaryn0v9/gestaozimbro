@@ -54,12 +54,29 @@ export function EditEmployeeDialog({ user }: EditEmployeeDialogProps) {
         throw new Error(response.error.message || 'Erro ao atualizar funcionário');
       }
 
+      // Log the action
+      await supabase.from('admin_actions').insert({
+        user_id: session.user.id,
+        action_type: 'update_employee',
+        target_user_id: user.id,
+        target_user_name: user.full_name,
+        details: { 
+          changes: {
+            fullName: fullName !== user.full_name ? { from: user.full_name, to: fullName } : undefined,
+            phone: phone !== user.phone ? { from: user.phone, to: phone } : undefined,
+            sector: sector !== user.sector ? { from: user.sector, to: sector } : undefined,
+            password: password ? 'updated' : undefined,
+          }
+        },
+      });
+
       toast({
         title: 'Funcionário atualizado!',
         description: 'As informações foram atualizadas com sucesso.',
       });
 
       queryClient.invalidateQueries({ queryKey: ['all-users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
       setOpen(false);
       setPassword('');
     } catch (error: any) {
