@@ -238,38 +238,38 @@ export default function Usuarios() {
                           </Select>
                         )}
 
-                        {/* Role Select - Dono can assign all roles, Gestor cannot assign Dono */}
-                        <Select
-                          value={u.role}
-                          onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
-                          disabled={updateRole.isPending || (!isDono && u.role === 'dono')}
-                        >
-                          <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {isDono && (
+                        {/* Role Select - Only for Dono */}
+                        {isDono && (
+                          <Select
+                            value={u.role}
+                            onValueChange={(value) => handleRoleChange(u.id, value as AppRole)}
+                            disabled={updateRole.isPending}
+                          >
+                            <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
                               <SelectItem value="dono">
                                 <div className="flex items-center gap-2">
                                   <Star className="w-4 h-4 text-purple-500" />
                                   Dono
                                 </div>
                               </SelectItem>
-                            )}
-                            <SelectItem value="admin">
-                              <div className="flex items-center gap-2">
-                                <Crown className="w-4 h-4 text-amber-500" />
-                                Gestor
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="funcionario">
-                              <div className="flex items-center gap-2">
-                                <UserCheck className="w-4 h-4 text-blue-500" />
-                                Funcionário
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                              <SelectItem value="admin">
+                                <div className="flex items-center gap-2">
+                                  <Crown className="w-4 h-4 text-amber-500" />
+                                  Gestor
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="funcionario">
+                                <div className="flex items-center gap-2">
+                                  <UserCheck className="w-4 h-4 text-blue-500" />
+                                  Funcionário
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
 
                         {/* Migrate to Phone Button */}
                         {needsMigration(u.email) && u.phone && (
