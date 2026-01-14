@@ -7,7 +7,8 @@ const corsHeaders = {
 
 interface ReportRequest {
   date: string;
-  targetUserIds?: string[]; // If empty, send to all users with phone numbers
+  targetUserId?: string; // Single user to send report to
+  sendToAll?: boolean; // Send to all users (dono only)
 }
 
 Deno.serve(async (req: Request) => {
@@ -67,7 +68,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { date, targetUserIds }: ReportRequest = await req.json();
+    const { date, targetUserId, sendToAll }: ReportRequest = await req.json();
 
     if (!date) {
       return new Response(
@@ -76,21 +77,38 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get users with phone numbers
+    // Only dono can use sendToAll
+    if (sendToAll && roleData.role !== 'dono') {
+      return new Response(
+        JSON.stringify({ error: 'Only owners can send to all users' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get target users based on the request
     let usersQuery = supabase
       .from('profiles')
       .select('id, full_name, phone, sector')
       .not('phone', 'is', null);
 
-    if (targetUserIds && targetUserIds.length > 0) {
-      usersQuery = usersQuery.in('id', targetUserIds);
+    if (targetUserId) {
+      // Single user mode
+      usersQuery = usersQuery.eq('id', targetUserId);
     }
+    // If sendToAll, we get all users with phone numbers (already the default query)
 
     const { data: users, error: usersError } = await usersQuery;
 
     if (usersError) {
       console.error('Error fetching users:', usersError);
       throw usersError;
+    }
+
+    if (!users || users.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No users with phone numbers found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Get user roles
@@ -135,59 +153,105 @@ Deno.serve(async (req: Request) => {
     const [year, month, day] = date.split('-');
     const formattedDate = `${day}/${month}/${year}`;
 
-    const sentResults: { userId: string; success: boolean; error?: string }[] = [];
+    const sentResults: { userId: string; userName: string; success: boolean; error?: string }[] = [];
 
-    for (const user of users || []) {
+    // Add delay between messages to avoid spam detection
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
       if (!user.phone) continue;
 
       const userRole = rolesMap.get(user.id) || 'funcionario';
       const userMovements = movements.filter(m => m.user_id === user.id);
 
-      // Build personalized message based on role
-      let message = `📊 *RELATÓRIO DO DIA ${formattedDate}*\n\n`;
-      message += `Olá, *${user.full_name}*!\n\n`;
+      // Build ONE consolidated message for this user
+      let message = `📊 *RELATÓRIO DIÁRIO*\n`;
+      message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+      message += `📅 *${formattedDate}*\n\n`;
+      message += `Olá, *${user.full_name}*! 👋\n\n`;
 
-      if (userRole === 'dono' || userRole === 'admin') {
-        // Full report for admin/dono
-        message += `📦 *RESUMO GERAL*\n`;
-        message += `• Total de movimentações: ${movements.length}\n`;
-        message += `• Entradas: ${totalEntradas} itens (${entradas.length} registros)\n`;
-        message += `• Saídas: ${totalSaidas} itens (${saidas.length} registros)\n\n`;
+      if (userRole === 'dono') {
+        // Complete report for owner
+        message += `👑 *VISÃO DO DONO*\n\n`;
         
-        message += `💰 *RESUMO FINANCEIRO*\n`;
-        message += `• Valor investido: R$ ${valorEntradas.toFixed(2).replace('.', ',')}\n`;
-        message += `• Valor vendido: R$ ${valorSaidas.toFixed(2).replace('.', ',')}\n`;
-        message += `• Balanço: R$ ${(valorSaidas - valorEntradas).toFixed(2).replace('.', ',')}\n\n`;
+        message += `📦 *RESUMO GERAL*\n`;
+        message += `├ Total: ${movements.length} movimentações\n`;
+        message += `├ ⬆️ Entradas: ${totalEntradas} itens\n`;
+        message += `└ ⬇️ Saídas: ${totalSaidas} itens\n\n`;
+        
+        message += `💰 *FINANCEIRO*\n`;
+        message += `├ Investido: R$ ${valorEntradas.toFixed(2).replace('.', ',')}\n`;
+        message += `├ Vendido: R$ ${valorSaidas.toFixed(2).replace('.', ',')}\n`;
+        const balance = valorSaidas - valorEntradas;
+        message += `└ Balanço: ${balance >= 0 ? '📈' : '📉'} R$ ${balance.toFixed(2).replace('.', ',')}\n\n`;
+
+        // Group movements by user role
+        const funcMovs = movements.filter(m => rolesMap.get(m.user_id) === 'funcionario');
+        const adminMovs = movements.filter(m => rolesMap.get(m.user_id) === 'admin');
+        const donoMovs = movements.filter(m => rolesMap.get(m.user_id) === 'dono');
+
+        if (funcMovs.length > 0) {
+          message += `👷 *Funcionários:* ${funcMovs.length} mov.\n`;
+        }
+        if (adminMovs.length > 0) {
+          message += `👔 *Gestores:* ${adminMovs.length} mov.\n`;
+        }
+        if (donoMovs.length > 0) {
+          message += `👑 *Você:* ${donoMovs.length} mov.\n`;
+        }
+
+      } else if (userRole === 'admin') {
+        // Report for admin/gestor
+        message += `👔 *VISÃO DO GESTOR*\n\n`;
+        
+        message += `📦 *RESUMO GERAL*\n`;
+        message += `├ Total: ${movements.length} movimentações\n`;
+        message += `├ ⬆️ Entradas: ${totalEntradas} itens\n`;
+        message += `└ ⬇️ Saídas: ${totalSaidas} itens\n\n`;
+        
+        message += `💰 *FINANCEIRO*\n`;
+        message += `├ Investido: R$ ${valorEntradas.toFixed(2).replace('.', ',')}\n`;
+        message += `├ Vendido: R$ ${valorSaidas.toFixed(2).replace('.', ',')}\n`;
+        const balance = valorSaidas - valorEntradas;
+        message += `└ Balanço: ${balance >= 0 ? '📈' : '📉'} R$ ${balance.toFixed(2).replace('.', ',')}\n\n`;
 
         if (userMovements.length > 0) {
           message += `📝 *SUAS MOVIMENTAÇÕES*\n`;
-          userMovements.slice(0, 10).forEach(m => {
+          const limitedMovs = userMovements.slice(0, 8);
+          limitedMovs.forEach((m, idx) => {
+            const prefix = idx === limitedMovs.length - 1 ? '└' : '├';
             const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
-            message += `${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
+            message += `${prefix} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
-          if (userMovements.length > 10) {
-            message += `... e mais ${userMovements.length - 10} movimentações\n`;
+          if (userMovements.length > 8) {
+            message += `   _...e mais ${userMovements.length - 8}_\n`;
           }
         }
+
       } else {
-        // Limited report for funcionarios
-        message += `📦 *SUAS MOVIMENTAÇÕES*\n`;
-        message += `• Total: ${userMovements.length} movimentações\n\n`;
+        // Report for funcionario
+        message += `👷 *SEU RELATÓRIO*\n\n`;
+        
+        message += `📦 *Suas movimentações:* ${userMovements.length}\n\n`;
 
         if (userMovements.length > 0) {
-          userMovements.slice(0, 10).forEach(m => {
+          const limitedMovs = userMovements.slice(0, 10);
+          limitedMovs.forEach((m, idx) => {
+            const prefix = idx === limitedMovs.length - 1 ? '└' : '├';
             const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
-            message += `${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
+            message += `${prefix} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
           if (userMovements.length > 10) {
-            message += `... e mais ${userMovements.length - 10} movimentações\n`;
+            message += `   _...e mais ${userMovements.length - 10}_\n`;
           }
         } else {
-          message += `_Você não teve movimentações neste dia._\n`;
+          message += `_Você não teve movimentações hoje._\n`;
         }
       }
 
-      message += `\n🕐 Relatório gerado automaticamente pelo sistema.`;
+      message += `\n━━━━━━━━━━━━━━━━━━━━━━\n`;
+      message += `🤖 _Relatório automático_`;
 
       // Format phone number for Z-API (remove non-digits and ensure country code)
       let formattedPhone = user.phone.replace(/\D/g, '');
@@ -196,7 +260,7 @@ Deno.serve(async (req: Request) => {
       }
 
       try {
-        console.log(`Sending message to ${formattedPhone}`);
+        console.log(`Sending single consolidated message to ${user.full_name} (${formattedPhone})`);
         
         const zapiUrl = `https://api.z-api.io/instances/${zapiInstanceId}/token/${zapiToken}/send-text`;
         
@@ -216,13 +280,18 @@ Deno.serve(async (req: Request) => {
         console.log(`Z-API response for ${user.full_name}:`, result);
 
         if (response.ok && !result.error) {
-          sentResults.push({ userId: user.id, success: true });
+          sentResults.push({ userId: user.id, userName: user.full_name, success: true });
         } else {
-          sentResults.push({ userId: user.id, success: false, error: result.error || 'Unknown error' });
+          sentResults.push({ userId: user.id, userName: user.full_name, success: false, error: result.error || 'Unknown error' });
+        }
+
+        // Add delay between messages to avoid spam (2 seconds)
+        if (i < users.length - 1) {
+          await delay(2000);
         }
       } catch (error: any) {
         console.error(`Error sending to ${user.full_name}:`, error);
-        sentResults.push({ userId: user.id, success: false, error: error.message });
+        sentResults.push({ userId: user.id, userName: user.full_name, success: false, error: error.message });
       }
     }
 
