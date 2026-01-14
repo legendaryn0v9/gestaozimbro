@@ -101,7 +101,7 @@ export default function Usuarios() {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const handleRoleChange = (userId: string, newRole: AppRole, userName?: string, oldRole?: AppRole) => {

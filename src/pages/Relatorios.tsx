@@ -3,26 +3,33 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { ReportMovementList } from '@/components/inventory/ReportMovementList';
 import { useStockMovements, useMovementDates, useEmployeeRanking, useProductEditHistory, StockMovement } from '@/hooks/useInventory';
 import { useIsAdmin, useIsDono, useAllUsersWithRoles } from '@/hooks/useUserRoles';
+import { useAdminActions, getActionLabel, getActionIcon } from '@/hooks/useAdminActions';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight, Pencil, TrendingUp, TrendingDown, Users, MessageCircle, Loader2, Shield } from 'lucide-react';
 import { format, subDays, addDays, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Relatorios() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<string>('movements');
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const { data: movements = [], isLoading } = useStockMovements(formattedDate);
   const { data: movementDates = [] } = useMovementDates();
   const { data: ranking = [] } = useEmployeeRanking();
   const { data: editHistory = [], isLoading: isLoadingEdits } = useProductEditHistory(formattedDate);
+  const { data: adminActions = [], isLoading: isLoadingActions } = useAdminActions(formattedDate);
   const { isAdmin } = useIsAdmin();
   const { isDono } = useIsDono();
   const { data: usersWithRoles = [] } = useAllUsersWithRoles();
+  const { toast } = useToast();
 
   // Create a map of user_id to role for quick lookup
   const userRolesMap = new Map(usersWithRoles.map(u => [u.id, u.role]));
@@ -66,6 +73,37 @@ export default function Relatorios() {
     const valorEnt = ent.reduce((sum, m) => sum + (Number(m.inventory_items?.price || 0) * Number(m.quantity)), 0);
     const valorSai = sai.reduce((sum, m) => sum + (Number(m.inventory_items?.price || 0) * Number(m.quantity)), 0);
     return { entradas: ent.length, saidas: sai.length, valorEntradas: valorEnt, valorSaidas: valorSai };
+  };
+
+  const handleSendWhatsApp = async () => {
+    setSendingWhatsApp(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Você precisa estar logado');
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-report', {
+        body: { date: formattedDate },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: 'Relatórios enviados!',
+        description: `${data.sent} mensagens enviadas com sucesso${data.failed > 0 ? `, ${data.failed} falharam` : ''}.`,
+      });
+    } catch (error: any) {
+      console.error('Error sending WhatsApp:', error);
+      toast({
+        title: 'Erro ao enviar',
+        description: error.message || 'Ocorreu um erro ao enviar os relatórios',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingWhatsApp(false);
+    }
   };
 
   const handleDownloadCSV = () => {
@@ -317,6 +355,10 @@ export default function Relatorios() {
     );
   };
 
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
@@ -334,16 +376,31 @@ export default function Relatorios() {
             </div>
           </div>
 
-          {/* Download button only for admin/dono */}
+          {/* Buttons for admin/dono */}
           {isAdmin && (
-            <Button
-              onClick={handleDownloadCSV}
-              disabled={movements.length === 0}
-              className="bg-gradient-amber text-primary-foreground hover:opacity-90"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Baixar Relatório
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                onClick={handleSendWhatsApp}
+                disabled={sendingWhatsApp}
+                variant="outline"
+                className="border-green-500 text-green-500 hover:bg-green-500/10"
+              >
+                {sendingWhatsApp ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                )}
+                Enviar via WhatsApp
+              </Button>
+              <Button
+                onClick={handleDownloadCSV}
+                disabled={movements.length === 0}
+                className="bg-gradient-amber text-primary-foreground hover:opacity-90"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Baixar Relatório
+              </Button>
+            </div>
           )}
         </div>
 
@@ -416,10 +473,10 @@ export default function Relatorios() {
 
         {/* Content - Different for each role */}
         <div className="glass rounded-2xl p-4 md:p-6">
-          {/* For Admin (Gestor) or Dono: Show tabs with movements and edits */}
+          {/* For Admin (Gestor) or Dono: Show tabs with movements, edits, and admin actions */}
           {isAdmin ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 flex-wrap h-auto">
                 <TabsTrigger value="movements" className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
                   Movimentações
@@ -427,6 +484,10 @@ export default function Relatorios() {
                 <TabsTrigger value="edits" className="flex items-center gap-2">
                   <Pencil className="w-4 h-4" />
                   Edições de Produtos
+                </TabsTrigger>
+                <TabsTrigger value="admin-actions" className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Ações Administrativas
                 </TabsTrigger>
               </TabsList>
 
@@ -487,6 +548,78 @@ export default function Relatorios() {
                           <div className="text-right text-sm text-muted-foreground">
                             <p>{format(new Date(edit.created_at), 'HH:mm')}</p>
                             <p>{edit.user_name}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="admin-actions">
+                <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
+                  Ações Administrativas de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                </h2>
+                
+                {isLoadingActions ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-16 rounded-xl bg-secondary/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : adminActions.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Nenhuma ação administrativa neste dia</p>
+                    <p className="text-sm">Criação de usuários, alteração de cargos e setores aparecerão aqui</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {adminActions.map((action) => (
+                      <div
+                        key={action.id}
+                        className="p-4 rounded-xl bg-secondary/30 border border-border"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-xl">
+                              {getActionIcon(action.action_type)}
+                            </div>
+                            <div>
+                              <p className="font-semibold">{getActionLabel(action.action_type)}</p>
+                              <div className="text-sm text-muted-foreground">
+                                {action.target_user_name && (
+                                  <span>Usuário: <strong>{action.target_user_name}</strong></span>
+                                )}
+                                {action.details && action.action_type === 'update_role' && (
+                                  <span className="ml-2">
+                                    ({action.details.old_role} → {action.details.new_role})
+                                  </span>
+                                )}
+                                {action.details && action.action_type === 'update_sector' && (
+                                  <span className="ml-2">
+                                    ({action.details.old_sector || 'nenhum'} → {action.details.new_sector || 'nenhum'})
+                                  </span>
+                                )}
+                                {action.details && action.action_type === 'create_employee' && (
+                                  <span className="ml-2">
+                                    (Setor: {action.details.sector})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right text-sm text-muted-foreground flex items-center gap-2">
+                            <div>
+                              <p>{format(new Date(action.created_at), 'HH:mm')}</p>
+                              <p>{action.profiles?.full_name || 'Usuário'}</p>
+                            </div>
+                            {action.profiles?.avatar_url && (
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={action.profiles.avatar_url} />
+                                <AvatarFallback>{getInitials(action.profiles.full_name || '')}</AvatarFallback>
+                              </Avatar>
+                            )}
                           </div>
                         </div>
                       </div>
