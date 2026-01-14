@@ -20,6 +20,7 @@ export default function Relatorios() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<string>('movements');
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [sendingToAll, setSendingToAll] = useState(false);
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const { data: movements = [], isLoading } = useStockMovements(formattedDate);
   const { data: movementDates = [] } = useMovementDates();
@@ -75,6 +76,41 @@ export default function Relatorios() {
     return { entradas: ent.length, saidas: sai.length, valorEntradas: valorEnt, valorSaidas: valorSai };
   };
 
+  // Send report to all users (dono only)
+  const handleSendToAll = async () => {
+    setSendingToAll(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Você precisa estar logado');
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-report', {
+        body: { date: formattedDate, sendToAll: true },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      const successNames = data.results?.filter((r: any) => r.success).map((r: any) => r.userName) || [];
+      
+      toast({
+        title: '✅ Relatórios enviados!',
+        description: `${data.sent} mensagem(s) enviada(s) com sucesso${data.failed > 0 ? `, ${data.failed} falharam` : ''}. ${successNames.length > 0 ? `Enviado para: ${successNames.join(', ')}` : ''}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending WhatsApp:', error);
+      toast({
+        title: 'Erro ao enviar',
+        description: error.message || 'Ocorreu um erro ao enviar os relatórios',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingToAll(false);
+    }
+  };
+
+  // Send report to a single user (for admin/dono)
   const handleSendWhatsApp = async () => {
     setSendingWhatsApp(true);
     try {
@@ -83,22 +119,23 @@ export default function Relatorios() {
         throw new Error('Você precisa estar logado');
       }
 
+      // Send only to the current user (self)
       const { data, error } = await supabase.functions.invoke('send-whatsapp-report', {
-        body: { date: formattedDate },
+        body: { date: formattedDate, targetUserId: session.user.id },
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
       toast({
-        title: 'Relatórios enviados!',
-        description: `${data.sent} mensagens enviadas com sucesso${data.failed > 0 ? `, ${data.failed} falharam` : ''}.`,
+        title: '✅ Relatório enviado!',
+        description: 'O relatório foi enviado para o seu WhatsApp.',
       });
     } catch (error: any) {
       console.error('Error sending WhatsApp:', error);
       toast({
         title: 'Erro ao enviar',
-        description: error.message || 'Ocorreu um erro ao enviar os relatórios',
+        description: error.message || 'Ocorreu um erro ao enviar o relatório',
         variant: 'destructive',
       });
     } finally {
@@ -379,9 +416,24 @@ export default function Relatorios() {
           {/* Buttons for admin/dono */}
           {isAdmin && (
             <div className="flex gap-2 flex-wrap">
+              {/* Send to All - Only for Dono */}
+              {isDono && (
+                <Button
+                  onClick={handleSendToAll}
+                  disabled={sendingToAll || sendingWhatsApp}
+                  className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:opacity-90"
+                >
+                  {sendingToAll ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Users className="w-4 h-4 mr-2" />
+                  )}
+                  Enviar para Todos
+                </Button>
+              )}
               <Button
                 onClick={handleSendWhatsApp}
-                disabled={sendingWhatsApp}
+                disabled={sendingWhatsApp || sendingToAll}
                 variant="outline"
                 className="border-green-500 text-green-500 hover:bg-green-500/10"
               >
@@ -390,7 +442,7 @@ export default function Relatorios() {
                 ) : (
                   <MessageCircle className="w-4 h-4 mr-2" />
                 )}
-                Enviar via WhatsApp
+                Meu Relatório
               </Button>
               <Button
                 onClick={handleDownloadCSV}
@@ -398,7 +450,7 @@ export default function Relatorios() {
                 className="bg-gradient-amber text-primary-foreground hover:opacity-90"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Baixar Relatório
+                Baixar CSV
               </Button>
             </div>
           )}
