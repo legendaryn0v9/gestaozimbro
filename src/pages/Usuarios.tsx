@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, RefreshCw, Star } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, Star, AlertTriangle } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
@@ -26,46 +29,71 @@ export default function Usuarios() {
   const deleteUser = useDeleteUser();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [migratingUser, setMigratingUser] = useState<string | null>(null);
+  const [formatDialogOpen, setFormatDialogOpen] = useState(false);
+  const [formatPassword, setFormatPassword] = useState('');
+  const [isFormatting, setIsFormatting] = useState(false);
 
-  const handleMigrateToPhone = async (userId: string, phone: string) => {
-    if (!phone) {
+  const handleFormatSystem = async () => {
+    if (formatPassword !== 'formatar') {
       toast({
-        title: 'Erro',
-        description: 'O usuário precisa ter um telefone cadastrado',
+        title: 'Senha incorreta',
+        description: 'A senha de formatação está incorreta.',
         variant: 'destructive',
       });
       return;
     }
 
-    setMigratingUser(userId);
+    setIsFormatting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('migrate-to-phone', {
-        body: { userId, phone },
-      });
+      // Delete all stock movements (entradas e saidas)
+      const { error: movementsError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (movementsError) throw movementsError;
+
+      // Delete all product edit history
+      const { error: editHistoryError } = await supabase
+        .from('product_edit_history')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (editHistoryError) throw editHistoryError;
+
+      // Delete all admin actions
+      const { error: adminActionsError } = await supabase
+        .from('admin_actions')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (adminActionsError) throw adminActionsError;
+
+      // Reset all inventory quantities to 0
+      const { error: inventoryError } = await supabase
+        .from('inventory_items')
+        .update({ quantity: 0 })
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (inventoryError) throw inventoryError;
 
       toast({
-        title: 'Migração concluída!',
-        description: 'O usuário agora pode fazer login com telefone.',
+        title: 'Sistema formatado!',
+        description: 'Todas as movimentações, relatórios e estoque foram zerados com sucesso.',
       });
 
-      queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+      setFormatDialogOpen(false);
+      setFormatPassword('');
+      queryClient.invalidateQueries();
     } catch (error: any) {
       toast({
-        title: 'Erro na migração',
+        title: 'Erro ao formatar',
         description: error.message,
         variant: 'destructive',
       });
     } finally {
-      setMigratingUser(null);
+      setIsFormatting(false);
     }
-  };
-
-  const needsMigration = (email: string) => {
-    return !email.endsWith('@funcionario.local');
   };
 
   // Real-time subscription for profile updates
@@ -139,8 +167,72 @@ export default function Usuarios() {
               <p className="text-sm text-muted-foreground">Gerencie os cargos, setores e fotos dos funcionários</p>
             </div>
           </div>
-          <CreateEmployeeDialog />
+          <div className="flex items-center gap-2">
+            {isDono && (
+              <Button
+                variant="destructive"
+                onClick={() => setFormatDialogOpen(true)}
+                className="gap-2"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Formatar Sistema
+              </Button>
+            )}
+            <CreateEmployeeDialog />
+          </div>
         </div>
+
+        {/* Format System Dialog */}
+        <Dialog open={formatDialogOpen} onOpenChange={setFormatDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Formatar Sistema
+              </DialogTitle>
+              <DialogDescription className="text-left space-y-2">
+                <p className="font-semibold text-destructive">ATENÇÃO: Esta ação é irreversível!</p>
+                <p>Ao formatar o sistema, você irá:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Excluir todas as entradas de estoque</li>
+                  <li>Excluir todas as saídas de estoque</li>
+                  <li>Zerar a quantidade de todos os itens</li>
+                  <li>Excluir todos os relatórios e históricos</li>
+                  <li>Excluir todas as ações administrativas</li>
+                </ul>
+                <p className="text-sm mt-4">Os itens, categorias e subcategorias serão mantidos.</p>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="format-password">Digite a senha para confirmar:</Label>
+                <Input
+                  id="format-password"
+                  type="password"
+                  placeholder="Senha de formatação"
+                  value={formatPassword}
+                  onChange={(e) => setFormatPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleFormatSystem()}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setFormatDialogOpen(false);
+                setFormatPassword('');
+              }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleFormatSystem}
+                disabled={isFormatting || !formatPassword}
+              >
+                {isFormatting ? 'Formatando...' : 'Confirmar Formatação'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="glass rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-6">
@@ -271,25 +363,6 @@ export default function Usuarios() {
                           </Select>
                         )}
 
-                        {/* Migrate to Phone Button */}
-                        {needsMigration(u.email) && u.phone && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMigrateToPhone(u.id, u.phone!)}
-                            disabled={migratingUser === u.id}
-                            className="text-primary border-primary hover:bg-primary/10"
-                          >
-                            {migratingUser === u.id ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Phone className="w-4 h-4 mr-1" />
-                                Migrar
-                              </>
-                            )}
-                          </Button>
-                        )}
 
                         {/* Edit Employee Button - Only for Dono */}
                         {isDono && (
