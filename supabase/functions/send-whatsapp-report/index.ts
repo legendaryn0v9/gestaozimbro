@@ -11,6 +11,19 @@ interface ReportRequest {
   sendToAll?: boolean; // Send to all users (dono only)
 }
 
+// Helper function to get action label
+function getActionLabel(actionType: string): string {
+  const labels: Record<string, string> = {
+    'create_employee': 'Criou funcionário',
+    'update_employee': 'Editou funcionário',
+    'delete_employee': 'Excluiu funcionário',
+    'update_role': 'Alterou cargo',
+    'update_sector': 'Alterou setor',
+    'update_avatar': 'Alterou foto',
+  };
+  return labels[actionType] || actionType;
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -85,6 +98,13 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Get ALL profiles for mapping names
+    const { data: allProfiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, phone, sector');
+    
+    const profilesMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
+
     // Get target users based on the request
     let usersQuery = supabase
       .from('profiles')
@@ -141,6 +161,16 @@ Deno.serve(async (req: Request) => {
 
     const movements = allMovements || [];
 
+    // Get admin actions for the date
+    const { data: adminActions } = await supabase
+      .from('admin_actions')
+      .select('*')
+      .gte('created_at', startOfDay)
+      .lte('created_at', endOfDay)
+      .order('created_at', { ascending: true });
+
+    const actions = adminActions || [];
+
     // Calculate totals
     const entradas = movements.filter(m => m.movement_type === 'entrada');
     const saidas = movements.filter(m => m.movement_type === 'saida');
@@ -172,8 +202,8 @@ Deno.serve(async (req: Request) => {
       message += `Olá, *${user.full_name}*! 👋\n\n`;
 
       if (userRole === 'dono') {
-        // Complete report for owner
-        message += `👑 *VISÃO DO DONO*\n\n`;
+        // Complete report for owner - FULL VISIBILITY
+        message += `👑 *VISÃO COMPLETA DO DONO*\n\n`;
         
         message += `📦 *RESUMO GERAL*\n`;
         message += `├ Total: ${movements.length} movimentações\n`;
@@ -186,19 +216,53 @@ Deno.serve(async (req: Request) => {
         const balance = valorSaidas - valorEntradas;
         message += `└ Balanço: ${balance >= 0 ? '📈' : '📉'} R$ ${balance.toFixed(2).replace('.', ',')}\n\n`;
 
-        // Group movements by user role
-        const funcMovs = movements.filter(m => rolesMap.get(m.user_id) === 'funcionario');
-        const adminMovs = movements.filter(m => rolesMap.get(m.user_id) === 'admin');
-        const donoMovs = movements.filter(m => rolesMap.get(m.user_id) === 'dono');
+        // Admin actions section
+        if (actions.length > 0) {
+          message += `⚙️ *AÇÕES ADMINISTRATIVAS*\n`;
+          const limitedActions = actions.slice(0, 10);
+          limitedActions.forEach((action, idx) => {
+            const prefix = idx === limitedActions.length - 1 && actions.length <= 10 ? '└' : '├';
+            const actionTime = new Date(action.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const adminName = profilesMap.get(action.user_id)?.full_name || 'Desconhecido';
+            const actionLabel = getActionLabel(action.action_type);
+            message += `${prefix} ${actionTime} - ${adminName}: ${actionLabel}`;
+            if (action.target_user_name) {
+              message += ` (${action.target_user_name})`;
+            }
+            message += `\n`;
+          });
+          if (actions.length > 10) {
+            message += `└ _...e mais ${actions.length - 10} ações_\n`;
+          }
+          message += `\n`;
+        }
 
-        if (funcMovs.length > 0) {
-          message += `👷 *Funcionários:* ${funcMovs.length} mov.\n`;
-        }
-        if (adminMovs.length > 0) {
-          message += `👔 *Gestores:* ${adminMovs.length} mov.\n`;
-        }
-        if (donoMovs.length > 0) {
-          message += `👑 *Você:* ${donoMovs.length} mov.\n`;
+        // Detailed breakdown by user
+        const userIds = [...new Set(movements.map(m => m.user_id))];
+        
+        if (userIds.length > 0) {
+          message += `👥 *DETALHES POR USUÁRIO*\n\n`;
+          
+          for (const userId of userIds) {
+            const userProfile = profilesMap.get(userId);
+            const userName = userProfile?.full_name || 'Desconhecido';
+            const userRoleLabel = rolesMap.get(userId) === 'dono' ? '👑' : rolesMap.get(userId) === 'admin' ? '👔' : '👷';
+            const userMovs = movements.filter(m => m.user_id === userId);
+            
+            message += `${userRoleLabel} *${userName}*\n`;
+            
+            const limitedMovs = userMovs.slice(0, 5);
+            limitedMovs.forEach((m, idx) => {
+              const prefix = idx === limitedMovs.length - 1 && userMovs.length <= 5 ? '└' : '├';
+              const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
+              const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+              message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
+            });
+            if (userMovs.length > 5) {
+              message += `└ _...e mais ${userMovs.length - 5}_\n`;
+            }
+            message += `\n`;
+          }
         }
 
       } else if (userRole === 'admin') {
@@ -216,13 +280,35 @@ Deno.serve(async (req: Request) => {
         const balance = valorSaidas - valorEntradas;
         message += `└ Balanço: ${balance >= 0 ? '📈' : '📉'} R$ ${balance.toFixed(2).replace('.', ',')}\n\n`;
 
+        // Admin actions section for gestors too
+        if (actions.length > 0) {
+          message += `⚙️ *AÇÕES ADMINISTRATIVAS*\n`;
+          const limitedActions = actions.slice(0, 8);
+          limitedActions.forEach((action, idx) => {
+            const prefix = idx === limitedActions.length - 1 && actions.length <= 8 ? '└' : '├';
+            const actionTime = new Date(action.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const adminName = profilesMap.get(action.user_id)?.full_name || 'Desconhecido';
+            const actionLabel = getActionLabel(action.action_type);
+            message += `${prefix} ${actionTime} - ${adminName}: ${actionLabel}`;
+            if (action.target_user_name) {
+              message += ` (${action.target_user_name})`;
+            }
+            message += `\n`;
+          });
+          if (actions.length > 8) {
+            message += `└ _...e mais ${actions.length - 8} ações_\n`;
+          }
+          message += `\n`;
+        }
+
         if (userMovements.length > 0) {
           message += `📝 *SUAS MOVIMENTAÇÕES*\n`;
           const limitedMovs = userMovements.slice(0, 8);
           limitedMovs.forEach((m, idx) => {
             const prefix = idx === limitedMovs.length - 1 ? '└' : '├';
             const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
-            message += `${prefix} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
+            const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
           if (userMovements.length > 8) {
             message += `   _...e mais ${userMovements.length - 8}_\n`;
@@ -240,7 +326,8 @@ Deno.serve(async (req: Request) => {
           limitedMovs.forEach((m, idx) => {
             const prefix = idx === limitedMovs.length - 1 ? '└' : '├';
             const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
-            message += `${prefix} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
+            const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
           if (userMovements.length > 10) {
             message += `   _...e mais ${userMovements.length - 10}_\n`;
