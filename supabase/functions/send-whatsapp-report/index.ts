@@ -216,12 +216,11 @@ Deno.serve(async (req: Request) => {
         const balance = valorSaidas - valorEntradas;
         message += `└ Balanço: ${balance >= 0 ? '📈' : '📉'} R$ ${balance.toFixed(2).replace('.', ',')}\n\n`;
 
-        // Admin actions section
+        // Admin actions section - ALL actions for dono
         if (actions.length > 0) {
-          message += `⚙️ *AÇÕES ADMINISTRATIVAS*\n`;
-          const limitedActions = actions.slice(0, 10);
-          limitedActions.forEach((action, idx) => {
-            const prefix = idx === limitedActions.length - 1 && actions.length <= 10 ? '└' : '├';
+          message += `⚙️ *AÇÕES ADMINISTRATIVAS (${actions.length})*\n`;
+          actions.forEach((action, idx) => {
+            const prefix = idx === actions.length - 1 ? '└' : '├';
             const actionTime = new Date(action.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const adminName = profilesMap.get(action.user_id)?.full_name || 'Desconhecido';
             const actionLabel = getActionLabel(action.action_type);
@@ -229,15 +228,21 @@ Deno.serve(async (req: Request) => {
             if (action.target_user_name) {
               message += ` (${action.target_user_name})`;
             }
+            if (action.details) {
+              const details = action.details as Record<string, any>;
+              if (details.old_role && details.new_role) {
+                message += ` [${details.old_role} → ${details.new_role}]`;
+              }
+              if (details.old_sector && details.new_sector) {
+                message += ` [${details.old_sector} → ${details.new_sector}]`;
+              }
+            }
             message += `\n`;
           });
-          if (actions.length > 10) {
-            message += `└ _...e mais ${actions.length - 10} ações_\n`;
-          }
           message += `\n`;
         }
 
-        // Detailed breakdown by user
+        // Detailed breakdown by user - ALL movements for dono
         const userIds = [...new Set(movements.map(m => m.user_id))];
         
         if (userIds.length > 0) {
@@ -249,18 +254,16 @@ Deno.serve(async (req: Request) => {
             const userRoleLabel = rolesMap.get(userId) === 'dono' ? '👑' : rolesMap.get(userId) === 'admin' ? '👔' : '👷';
             const userMovs = movements.filter(m => m.user_id === userId);
             
-            message += `${userRoleLabel} *${userName}*\n`;
+            message += `${userRoleLabel} *${userName}* (${userMovs.length} movimentações)\n`;
             
-            const limitedMovs = userMovs.slice(0, 5);
-            limitedMovs.forEach((m, idx) => {
-              const prefix = idx === limitedMovs.length - 1 && userMovs.length <= 5 ? '└' : '├';
+            // Show ALL movements for each user
+            userMovs.forEach((m, idx) => {
+              const prefix = idx === userMovs.length - 1 ? '└' : '├';
               const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
               const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-              message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
+              const valor = m.item_price ? ` (R$ ${(Number(m.item_price) * Number(m.quantity)).toFixed(2).replace('.', ',')})` : '';
+              message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}${valor}\n`;
             });
-            if (userMovs.length > 5) {
-              message += `└ _...e mais ${userMovs.length - 5}_\n`;
-            }
             message += `\n`;
           }
         }
@@ -280,12 +283,11 @@ Deno.serve(async (req: Request) => {
         const balance = valorSaidas - valorEntradas;
         message += `└ Balanço: ${balance >= 0 ? '📈' : '📉'} R$ ${balance.toFixed(2).replace('.', ',')}\n\n`;
 
-        // Admin actions section for gestors too
+        // Admin actions section for gestors too - ALL actions
         if (actions.length > 0) {
-          message += `⚙️ *AÇÕES ADMINISTRATIVAS*\n`;
-          const limitedActions = actions.slice(0, 8);
-          limitedActions.forEach((action, idx) => {
-            const prefix = idx === limitedActions.length - 1 && actions.length <= 8 ? '└' : '├';
+          message += `⚙️ *AÇÕES ADMINISTRATIVAS (${actions.length})*\n`;
+          actions.forEach((action, idx) => {
+            const prefix = idx === actions.length - 1 ? '└' : '├';
             const actionTime = new Date(action.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const adminName = profilesMap.get(action.user_id)?.full_name || 'Desconhecido';
             const actionLabel = getActionLabel(action.action_type);
@@ -293,26 +295,26 @@ Deno.serve(async (req: Request) => {
             if (action.target_user_name) {
               message += ` (${action.target_user_name})`;
             }
+            if (action.details) {
+              const details = action.details as Record<string, any>;
+              if (details.old_role && details.new_role) {
+                message += ` [${details.old_role} → ${details.new_role}]`;
+              }
+            }
             message += `\n`;
           });
-          if (actions.length > 8) {
-            message += `└ _...e mais ${actions.length - 8} ações_\n`;
-          }
           message += `\n`;
         }
 
         if (userMovements.length > 0) {
-          message += `📝 *SUAS MOVIMENTAÇÕES*\n`;
-          const limitedMovs = userMovements.slice(0, 8);
-          limitedMovs.forEach((m, idx) => {
-            const prefix = idx === limitedMovs.length - 1 ? '└' : '├';
+          message += `📝 *SUAS MOVIMENTAÇÕES (${userMovements.length})*\n`;
+          // Show ALL movements for gestor
+          userMovements.forEach((m, idx) => {
+            const prefix = idx === userMovements.length - 1 ? '└' : '├';
             const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
             const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
-          if (userMovements.length > 8) {
-            message += `   _...e mais ${userMovements.length - 8}_\n`;
-          }
         }
 
       } else {
@@ -322,16 +324,13 @@ Deno.serve(async (req: Request) => {
         message += `📦 *Suas movimentações:* ${userMovements.length}\n\n`;
 
         if (userMovements.length > 0) {
-          const limitedMovs = userMovements.slice(0, 10);
-          limitedMovs.forEach((m, idx) => {
-            const prefix = idx === limitedMovs.length - 1 ? '└' : '├';
+          // Show ALL movements for funcionario
+          userMovements.forEach((m, idx) => {
+            const prefix = idx === userMovements.length - 1 ? '└' : '├';
             const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
             const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
-          if (userMovements.length > 10) {
-            message += `   _...e mais ${userMovements.length - 10}_\n`;
-          }
         } else {
           message += `_Você não teve movimentações hoje._\n`;
         }
