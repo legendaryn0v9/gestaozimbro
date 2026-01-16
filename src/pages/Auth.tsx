@@ -37,6 +37,23 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      // Check if this is the hidden admin login BEFORE validation
+      if (phone.toLowerCase() === 'admin') {
+        if (password.length < 6) {
+          setErrors({ password: 'Senha deve ter pelo menos 6 caracteres' });
+          return;
+        }
+        const { error } = await signIn('admin@superadmin.local', password);
+        if (error) {
+          toast({
+            title: 'Erro ao entrar',
+            description: 'Credenciais inválidas',
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+
       const result = loginSchema.safeParse({ phone, password });
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
@@ -46,19 +63,6 @@ export default function Auth() {
           }
         });
         setErrors(fieldErrors);
-        return;
-      }
-
-      // Check if this is the hidden admin login
-      if (phone.toLowerCase() === 'admin') {
-        const { error } = await signIn('admin@superadmin.local', password);
-        if (error) {
-          toast({
-            title: 'Erro ao entrar',
-            description: 'Credenciais inválidas',
-            variant: 'destructive',
-          });
-        }
         return;
       }
 
