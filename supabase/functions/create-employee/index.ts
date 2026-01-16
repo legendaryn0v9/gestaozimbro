@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Default avatars based on role
+const DEFAULT_FUNCIONARIO_AVATAR = 'https://klltuuwzedbhkbykayyn.supabase.co/storage/v1/object/public/avatars/aec0fc98-9144-4c29-a90b-6d812539e670-1768175022612.png';
+
 interface CreateEmployeeRequest {
   phone: string;
   password: string;
@@ -76,6 +79,9 @@ serve(async (req: Request) => {
     // Create a fake email using phone number (Supabase requires email)
     const fakeEmail = `${phone.replace(/\D/g, '')}@funcionario.local`;
 
+    // Use provided avatar or default funcionario avatar
+    const finalAvatarUrl = avatarUrl || DEFAULT_FUNCIONARIO_AVATAR;
+
     // Create the user with admin API
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: fakeEmail,
@@ -85,7 +91,7 @@ serve(async (req: Request) => {
         full_name: fullName,
         phone: phone,
         sector: sector,
-        avatar_url: avatarUrl,
+        avatar_url: finalAvatarUrl,
       },
     });
 
@@ -106,14 +112,14 @@ serve(async (req: Request) => {
       );
     }
 
-    // Update profile with phone and sector
+    // Update profile with phone, sector and avatar
     if (newUser.user) {
       await supabaseAdmin
         .from("profiles")
         .update({ 
           phone: phone,
           sector: sector,
-          avatar_url: avatarUrl || null
+          avatar_url: finalAvatarUrl
         })
         .eq("id", newUser.user.id);
     }

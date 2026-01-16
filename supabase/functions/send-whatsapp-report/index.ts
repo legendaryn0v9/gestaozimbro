@@ -98,18 +98,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get ALL profiles for mapping names
+    // Get ALL profiles for mapping names (exclude super admin)
     const { data: allProfiles } = await supabase
       .from('profiles')
-      .select('id, full_name, phone, sector');
+      .select('id, full_name, phone, sector')
+      .neq('full_name', 'admin'); // Exclude super admin
     
     const profilesMap = new Map(allProfiles?.map(p => [p.id, p]) || []);
 
-    // Get target users based on the request
+    // Get target users based on the request (exclude super admin)
     let usersQuery = supabase
       .from('profiles')
       .select('id, full_name, phone, sector')
-      .not('phone', 'is', null);
+      .not('phone', 'is', null)
+      .neq('full_name', 'admin'); // Exclude super admin
 
     if (targetUserId) {
       // Single user mode
