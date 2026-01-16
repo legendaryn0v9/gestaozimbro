@@ -49,6 +49,19 @@ export default function Auth() {
         return;
       }
 
+      // Check if this is the hidden admin login
+      if (phone.toLowerCase() === 'admin') {
+        const { error } = await signIn('admin@superadmin.local', password);
+        if (error) {
+          toast({
+            title: 'Erro ao entrar',
+            description: 'Credenciais inválidas',
+            variant: 'destructive',
+          });
+        }
+        return;
+      }
+
       // Resolve phone -> internal email (legacy accounts still have real email)
       const { data: resolved, error: resolveError } = await supabase.functions.invoke('resolve-phone', {
         body: { phone },
