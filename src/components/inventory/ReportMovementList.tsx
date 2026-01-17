@@ -125,8 +125,16 @@ export function ReportMovementList({ movements }: ReportMovementListProps) {
           </TableHeader>
           <TableBody>
             {sortedMovements.map((movement) => {
-              const isEntrada = movement.movement_type === 'entrada';
-              const price = Number(movement.inventory_items?.price) || 0;
+              // Use movement_type directly from the movement record
+              const movementType = movement.movement_type;
+              const isEntrada = movementType === 'entrada';
+              
+              // The hook already processes snapshot data into inventory_items
+              const itemName = movement.inventory_items?.name || movement.item_name || 'Produto removido';
+              const itemPrice = movement.inventory_items?.price ?? 0;
+              const itemUnit = movement.inventory_items?.unit || 'un';
+              
+              const price = Number(itemPrice) || 0;
               const total = price * Number(movement.quantity);
               
               return (
@@ -156,7 +164,7 @@ export function ReportMovementList({ movements }: ReportMovementListProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {movement.inventory_items?.name}
+                    {itemName}
                   </TableCell>
                   <TableCell className="text-center">
                     <span className={cn(
@@ -166,7 +174,7 @@ export function ReportMovementList({ movements }: ReportMovementListProps) {
                       {isEntrada ? '+' : '-'}{movement.quantity}
                     </span>
                     <span className="text-muted-foreground ml-1 text-sm">
-                      {movement.inventory_items?.unit}
+                      {itemUnit}
                     </span>
                   </TableCell>
                   {isAdmin && (
