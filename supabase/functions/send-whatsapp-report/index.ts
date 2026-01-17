@@ -261,7 +261,7 @@ Deno.serve(async (req: Request) => {
             // Show ALL movements for each user
             userMovs.forEach((m, idx) => {
               const prefix = idx === userMovs.length - 1 ? '└' : '├';
-              const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
+              const tipo = m.movement_type === 'entrada' ? '⬆️' : m.movement_type === 'saida' ? '⬇️' : '✏️';
               const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
               const valor = m.item_price ? ` (R$ ${(Number(m.item_price) * Number(m.quantity)).toFixed(2).replace('.', ',')})` : '';
               message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}${valor}\n`;
@@ -313,7 +313,7 @@ Deno.serve(async (req: Request) => {
           // Show ALL movements for gestor
           userMovements.forEach((m, idx) => {
             const prefix = idx === userMovements.length - 1 ? '└' : '├';
-            const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
+            const tipo = m.movement_type === 'entrada' ? '⬆️' : m.movement_type === 'saida' ? '⬇️' : '✏️';
             const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });
@@ -329,7 +329,7 @@ Deno.serve(async (req: Request) => {
           // Show ALL movements for funcionario
           userMovements.forEach((m, idx) => {
             const prefix = idx === userMovements.length - 1 ? '└' : '├';
-            const tipo = m.movement_type === 'entrada' ? '⬆️' : '⬇️';
+            const tipo = m.movement_type === 'entrada' ? '⬆️' : m.movement_type === 'saida' ? '⬇️' : '✏️';
             const time = new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             message += `${prefix} ${time} ${tipo} ${m.item_name_snapshot}: ${m.quantity} ${m.item_unit || ''}\n`;
           });

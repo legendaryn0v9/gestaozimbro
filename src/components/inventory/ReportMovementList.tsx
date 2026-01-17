@@ -2,7 +2,7 @@ import { StockMovement } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TrendingUp, TrendingDown, Clock, Package, User, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, Package, User, DollarSign, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -125,18 +125,42 @@ export function ReportMovementList({ movements }: ReportMovementListProps) {
           </TableHeader>
           <TableBody>
             {sortedMovements.map((movement) => {
-              // Use movement_type directly from the movement record
               const movementType = movement.movement_type;
               const isEntrada = movementType === 'entrada';
-              
+              const isSaida = movementType === 'saida';
+
+              const meta = isEntrada
+                ? {
+                    label: 'Entrada',
+                    Icon: TrendingUp,
+                    badge: 'bg-success/10 text-success border-success/30',
+                    qty: 'text-success',
+                    sign: '+',
+                  }
+                : isSaida
+                  ? {
+                      label: 'Saída',
+                      Icon: TrendingDown,
+                      badge: 'bg-destructive/10 text-destructive border-destructive/30',
+                      qty: 'text-destructive',
+                      sign: '-',
+                    }
+                  : {
+                      label: 'Edição',
+                      Icon: Pencil,
+                      badge: 'bg-primary/10 text-primary border-primary/30',
+                      qty: 'text-primary',
+                      sign: '',
+                    };
+
               // The hook already processes snapshot data into inventory_items
               const itemName = movement.inventory_items?.name || movement.item_name || 'Produto removido';
               const itemPrice = movement.inventory_items?.price ?? 0;
               const itemUnit = movement.inventory_items?.unit || 'un';
-              
+
               const price = Number(itemPrice) || 0;
               const total = price * Number(movement.quantity);
-              
+
               return (
                 <TableRow 
                   key={movement.id}
@@ -148,30 +172,18 @@ export function ReportMovementList({ movements }: ReportMovementListProps) {
                   <TableCell>
                     <Badge 
                       variant="outline"
-                      className={cn(
-                        'gap-1.5 font-medium',
-                        isEntrada 
-                          ? 'bg-success/10 text-success border-success/30' 
-                          : 'bg-destructive/10 text-destructive border-destructive/30'
-                      )}
+                      className={cn('gap-1.5 font-medium', meta.badge)}
                     >
-                      {isEntrada ? (
-                        <TrendingUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <TrendingDown className="w-3.5 h-3.5" />
-                      )}
-                      {isEntrada ? 'Entrada' : 'Saída'}
+                      <meta.Icon className="w-3.5 h-3.5" />
+                      {meta.label}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">
                     {itemName}
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className={cn(
-                      'font-bold',
-                      isEntrada ? 'text-success' : 'text-destructive'
-                    )}>
-                      {isEntrada ? '+' : '-'}{movement.quantity}
+                    <span className={cn('font-bold', meta.qty)}>
+                      {meta.sign}{movement.quantity}
                     </span>
                     <span className="text-muted-foreground ml-1 text-sm">
                       {itemUnit}
