@@ -196,14 +196,18 @@ export default function Relatorios() {
         lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
         lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
         funcionarioMovements.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(m => {
-          const isEntrada = m.movement_type === 'entrada';
-          const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+          const tipo = m.movement_type === 'entrada'
+            ? '⬆️ ENTRADA'
+            : m.movement_type === 'saida'
+              ? '⬇️ SAÍDA'
+              : '✏️ EDIÇÃO';
+          const sign = m.movement_type === 'entrada' ? '+' : m.movement_type === 'saida' ? '-' : '';
           const price = Number(m.inventory_items?.price) || 0;
           lines.push([
             format(new Date(m.created_at), "HH:mm"),
             tipo,
             `"${m.inventory_items?.name || ''}"`,
-            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
             `R$ ${price.toFixed(2).replace('.', ',')}`,
             `"${m.profiles?.full_name || ''}"`,
             `"${m.notes || '-'}"`
@@ -224,14 +228,18 @@ export default function Relatorios() {
         lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
         lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
         gestorMovements.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(m => {
-          const isEntrada = m.movement_type === 'entrada';
-          const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+          const tipo = m.movement_type === 'entrada'
+            ? '⬆️ ENTRADA'
+            : m.movement_type === 'saida'
+              ? '⬇️ SAÍDA'
+              : '✏️ EDIÇÃO';
+          const sign = m.movement_type === 'entrada' ? '+' : m.movement_type === 'saida' ? '-' : '';
           const price = Number(m.inventory_items?.price) || 0;
           lines.push([
             format(new Date(m.created_at), "HH:mm"),
             tipo,
             `"${m.inventory_items?.name || ''}"`,
-            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
             `R$ ${price.toFixed(2).replace('.', ',')}`,
             `"${m.profiles?.full_name || ''}"`,
             `"${m.notes || '-'}"`
@@ -252,14 +260,18 @@ export default function Relatorios() {
         lines.push('├───────────────────────────────────────────────────────────────────────────────┤');
         lines.push('Horário,Tipo,Produto,Quantidade,Valor Unit.,Responsável,Observações');
         donoMovements.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach(m => {
-          const isEntrada = m.movement_type === 'entrada';
-          const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+          const tipo = m.movement_type === 'entrada'
+            ? '⬆️ ENTRADA'
+            : m.movement_type === 'saida'
+              ? '⬇️ SAÍDA'
+              : '✏️ EDIÇÃO';
+          const sign = m.movement_type === 'entrada' ? '+' : m.movement_type === 'saida' ? '-' : '';
           const price = Number(m.inventory_items?.price) || 0;
           lines.push([
             format(new Date(m.created_at), "HH:mm"),
             tipo,
             `"${m.inventory_items?.name || ''}"`,
-            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
             `R$ ${price.toFixed(2).replace('.', ',')}`,
             `"${m.profiles?.full_name || ''}"`,
             `"${m.notes || '-'}"`
@@ -283,8 +295,12 @@ export default function Relatorios() {
       lines.push('');
 
       sortedMovements.forEach(m => {
-        const isEntrada = m.movement_type === 'entrada';
-        const tipo = isEntrada ? '⬆️ ENTRADA' : '⬇️ SAÍDA';
+        const tipo = m.movement_type === 'entrada'
+          ? '⬆️ ENTRADA'
+          : m.movement_type === 'saida'
+            ? '⬇️ SAÍDA'
+            : '✏️ EDIÇÃO';
+        const sign = m.movement_type === 'entrada' ? '+' : m.movement_type === 'saida' ? '-' : '';
         const price = Number(m.inventory_items?.price) || 0;
         
         if (isAdmin) {
@@ -292,7 +308,7 @@ export default function Relatorios() {
             format(new Date(m.created_at), "HH:mm"),
             tipo,
             `"${m.inventory_items?.name || ''}"`,
-            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
             `R$ ${price.toFixed(2).replace('.', ',')}`,
             `"${m.profiles?.full_name || ''}"`,
             `"${m.notes || '-'}"`
@@ -302,7 +318,7 @@ export default function Relatorios() {
             format(new Date(m.created_at), "HH:mm"),
             tipo,
             `"${m.inventory_items?.name || ''}"`,
-            `${isEntrada ? '+' : '-'}${m.quantity} ${m.inventory_items?.unit || ''}`,
+            `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
             `"${m.profiles?.full_name || ''}"`,
             `"${m.notes || '-'}"`
           ].join(','));

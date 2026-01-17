@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
 export type SectorType = 'bar' | 'cozinha';
-export type MovementType = 'entrada' | 'saida';
+export type MovementType = 'entrada' | 'saida' | 'edicao';
 export type UnitType = 'unidade' | 'kg' | 'litro' | 'caixa' | 'pacote';
 
 export interface InventoryItem {
@@ -25,7 +25,7 @@ export interface InventoryItem {
 
 export interface StockMovement {
   id: string;
-  item_id: string;
+  item_id: string | null;
   user_id: string;
   movement_type: MovementType;
   quantity: number;
