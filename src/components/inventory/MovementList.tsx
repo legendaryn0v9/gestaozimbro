@@ -21,7 +21,13 @@ export function MovementList({ movements, showDate = true }: MovementListProps) 
   return (
     <div className="space-y-3">
       {movements.map((movement) => {
-        const isEntrada = movement.movement_type === 'entrada';
+        // Use movement_type directly from the movement record
+        const movementType = movement.movement_type;
+        const isEntrada = movementType === 'entrada';
+        
+        // The hook already processes snapshot data into inventory_items
+        const itemName = movement.inventory_items?.name || movement.item_name || 'Produto removido';
+        const itemUnit = movement.inventory_items?.unit || 'un';
         
         return (
           <div
@@ -43,13 +49,13 @@ export function MovementList({ movements, showDate = true }: MovementListProps) 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <h4 className="font-semibold text-foreground truncate">
-                    {movement.inventory_items?.name}
+                    {itemName}
                   </h4>
                   <span className={cn(
                     'font-bold whitespace-nowrap',
                     isEntrada ? 'text-success' : 'text-destructive'
                   )}>
-                    {isEntrada ? '+' : '-'}{movement.quantity} {movement.inventory_items?.unit}
+                    {isEntrada ? '+' : '-'}{movement.quantity} {itemUnit}
                   </span>
                 </div>
 
