@@ -14,7 +14,7 @@ export function useUserSector() {
         .from('profiles')
         .select('sector')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching user sector:', error);
@@ -24,6 +24,10 @@ export function useUserSector() {
       return data?.sector as 'bar' | 'cozinha' | null;
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    retry: 2,
+    retryDelay: 1000,
   });
 
   return {

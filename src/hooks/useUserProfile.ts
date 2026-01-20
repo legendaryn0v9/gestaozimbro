@@ -21,7 +21,7 @@ export function useCurrentUserProfile(userId: string | undefined) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -31,6 +31,10 @@ export function useCurrentUserProfile(userId: string | undefined) {
       return data as UserProfile;
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
