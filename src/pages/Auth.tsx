@@ -7,13 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Phone, Lock, ArrowRight } from 'lucide-react';
-import { z } from 'zod';
 import logoImg from '@/assets/logo.png';
-
-const loginSchema = z.object({
-  phone: z.string().trim().min(8, { message: 'Telefone deve ter pelo menos 8 caracteres' }),
-  password: z.string().min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
-});
 
 export default function Auth() {
   const [phone, setPhone] = useState('');
@@ -30,6 +24,10 @@ export default function Auth() {
       navigate('/');
     }
   }, [user, navigate]);
+
+  const normalizePhone = (input: string): string => {
+    return input.replace(/\D/g, '');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,21 +52,23 @@ export default function Auth() {
         return;
       }
 
-      const result = loginSchema.safeParse({ phone, password });
-      if (!result.success) {
-        const fieldErrors: Record<string, string> = {};
-        result.error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
+      // Normalize phone to digits only
+      const normalizedPhone = normalizePhone(phone);
+
+      // Validate normalized phone
+      if (normalizedPhone.length < 8) {
+        setErrors({ phone: 'Telefone deve ter pelo menos 8 dígitos' });
+        return;
+      }
+
+      if (password.length < 6) {
+        setErrors({ password: 'Senha deve ter pelo menos 6 caracteres' });
         return;
       }
 
       // Resolve phone -> internal email (legacy accounts still have real email)
       const { data: resolved, error: resolveError } = await supabase.functions.invoke('resolve-phone', {
-        body: { phone },
+        body: { phone: normalizedPhone },
       });
 
       const resolvedEmail = resolved?.email as string | undefined;

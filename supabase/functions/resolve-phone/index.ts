@@ -43,10 +43,12 @@ serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Try to find by normalized phone first, then by raw phone (for legacy accounts)
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("email")
-      .eq("phone", normalized)
+      .or(`phone.eq.${normalized},phone.eq.${phone}`)
+      .limit(1)
       .maybeSingle();
 
     if (error) {

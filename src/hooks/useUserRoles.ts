@@ -41,6 +41,8 @@ export function useCurrentUserRole() {
       return data as UserRole | null;
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes - roles rarely change
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 }
 
