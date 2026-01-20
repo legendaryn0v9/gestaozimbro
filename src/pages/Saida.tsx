@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { format } from 'date-fns';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MovementDialog } from '@/components/inventory/MovementDialog';
 import { MovementList } from '@/components/inventory/MovementList';
@@ -20,22 +21,22 @@ export default function Saida() {
   useRealtimeInventory();
   
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: allMovements = [], isLoading } = useStockMovements();
+  
+  // Always filter by today's date
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const { data: allMovements = [], isLoading } = useStockMovements(today);
 
   // Filter movements based on user role
   const movements = useMemo(() => {
     const saidas = allMovements.filter(m => m.movement_type === 'saida');
     
     if (isAdmin) {
+      // Gestor/Admin: sees all movements of the day
       return saidas;
     }
-    // For employees: only show their own movements from their sector
-    return saidas.filter(m => {
-      const isOwnMovement = m.user_id === user?.id;
-      const isFromUserSector = !userSector || m.inventory_items?.sector === userSector;
-      return isOwnMovement && isFromUserSector;
-    });
-  }, [allMovements, isAdmin, user?.id, userSector]);
+    // For employees: only show their own movements from today
+    return saidas.filter(m => m.user_id === user?.id);
+  }, [allMovements, isAdmin, user?.id]);
 
   // Separate by sector for admin
   const barMovements = useMemo(() => 
