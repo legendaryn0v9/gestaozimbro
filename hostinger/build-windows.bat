@@ -88,6 +88,14 @@ copy /Y "hostinger\frontend\src\hooks\useUserSector.ts" "src\hooks\useUserSector
 if errorlevel 1 (echo ERRO ao copiar useUserSector.ts & pause & exit /b 1)
 echo   useUserSector.ts copiado
 
+copy /Y "hostinger\frontend\src\hooks\useAdminActions.ts" "src\hooks\useAdminActions.ts" >nul
+if errorlevel 1 (echo ERRO ao copiar useAdminActions.ts & pause & exit /b 1)
+echo   useAdminActions.ts copiado
+
+copy /Y "hostinger\frontend\src\hooks\use-toast.ts" "src\hooks\use-toast.ts" >nul
+if errorlevel 1 (echo ERRO ao copiar use-toast.ts & pause & exit /b 1)
+echo   use-toast.ts copiado
+
 copy /Y "hostinger\frontend\src\pages\Auth.tsx" "src\pages\Auth.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar Auth.tsx & pause & exit /b 1)
 echo   Auth.tsx copiado
