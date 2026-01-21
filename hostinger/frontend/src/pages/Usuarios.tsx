@@ -122,8 +122,8 @@ export default function Usuarios() {
     return null;
   };
 
-  // Filter out the current user and admin user
-  const filteredUsers = allUsers.filter(u => u.id !== user?.id && u.full_name?.toLowerCase() !== 'admin');
+  // Show all users EXCEPT the admin that formats data (the hidden super admin)
+  const filteredUsers = allUsers.filter(u => u.full_name?.toLowerCase() !== 'admin');
 
   if (!isAdmin) return null;
 

@@ -28,14 +28,17 @@ export default function Cozinha() {
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
 
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories('cozinha');
-  const { data: items = [], isLoading } = useInventoryItems('cozinha');
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useCategories('cozinha');
+  const { data: items = [], isLoading, isError: itemsError } = useInventoryItems('cozinha');
 
   useEffect(() => {
     if (!sectorLoading && !canAccessCozinha && !isAdmin) {
       navigate('/bar');
     }
   }, [canAccessCozinha, sectorLoading, isAdmin, navigate]);
+
+  // Treat error as loaded (show empty state instead of infinite loading)
+  const isDataLoading = (categoriesLoading && !categoriesError) || (isLoading && !itemsError);
 
   const filteredItems = useMemo(() => {
     if (!search) return items;
@@ -51,7 +54,7 @@ export default function Cozinha() {
     setSaidaDialogOpen(true);
   };
 
-  if (sectorLoading || categoriesLoading) {
+  if (sectorLoading || isDataLoading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
