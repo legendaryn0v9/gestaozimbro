@@ -191,12 +191,24 @@ export function EditItemDialog({ open, onOpenChange, item }: EditItemDialogProps
 
           <div className="space-y-2">
             <Label htmlFor="edit-name">Nome do Item</Label>
-            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} className="bg-input border-border" required />
+            <Input
+              id="edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value.toUpperCase())}
+              className="bg-input border-border"
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="edit-description">Descrição</Label>
-            <Textarea id="edit-description" value={description} onChange={(e) => setDescription(e.target.value)} className="bg-input border-border resize-none" rows={2} />
+            <Textarea
+              id="edit-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value.toUpperCase())}
+              className="bg-input border-border resize-none"
+              rows={2}
+            />
           </div>
 
           <div className="space-y-2">

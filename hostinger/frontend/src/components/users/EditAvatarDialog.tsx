@@ -25,7 +25,8 @@ export function EditAvatarDialog({ userId, userName, currentAvatarUrl }: EditAva
   const { user } = useAuth();
   const updateAvatar = useUpdateProfileAvatar();
 
-  const canEditThisUser = !!user && (user.id === userId || user.role === 'admin' || user.role === 'dono');
+  // Hostinger rules: only Dono can manage avatars (including their own).
+  const canEditThisUser = user?.role === 'dono';
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 

@@ -271,7 +271,7 @@ export default function Usuarios() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Avatar edit */}
-                  {(isDono || user?.id === u.id) && (
+                  {isDono && (
                     <EditAvatarDialog
                       userId={u.id}
                       userName={u.full_name}

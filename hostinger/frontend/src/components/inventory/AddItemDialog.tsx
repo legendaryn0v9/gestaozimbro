@@ -153,12 +153,26 @@ export function AddItemDialog({ open, onOpenChange, defaultSector, defaultCatego
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Item</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Cerveja Heineken" className="bg-input border-border" required />
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value.toUpperCase())}
+              placeholder="Ex: CERVEJA HEINEKEN"
+              className="bg-input border-border"
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição (opcional)</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do item..." className="bg-input border-border resize-none" rows={2} />
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value.toUpperCase())}
+              placeholder="DESCRIÇÃO DO ITEM..."
+              className="bg-input border-border resize-none"
+              rows={2}
+            />
           </div>
 
           <div className="space-y-2">
