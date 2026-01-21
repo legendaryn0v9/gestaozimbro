@@ -103,7 +103,7 @@ export function useCreateCategory() {
     },
     onError: (error: Error) => {
       console.error('Error creating category:', error);
-      toast.error('Erro ao criar categoria');
+      toast.error(error?.message || 'Erro ao criar categoria');
     },
   });
 }
@@ -144,7 +144,7 @@ export function useDeleteCategory() {
     },
     onError: (error: Error) => {
       console.error('Error deleting category:', error);
-      toast.error('Erro ao excluir categoria');
+      toast.error(error?.message || 'Erro ao excluir categoria');
     },
   });
 }
@@ -167,7 +167,7 @@ export function useCreateSubcategory() {
     },
     onError: (error: Error) => {
       console.error('Error creating subcategory:', error);
-      toast.error('Erro ao criar subcategoria');
+      toast.error(error?.message || 'Erro ao criar subcategoria');
     },
   });
 }
@@ -187,7 +187,7 @@ export function useDeleteSubcategory() {
     },
     onError: (error: Error) => {
       console.error('Error deleting subcategory:', error);
-      toast.error('Erro ao excluir subcategoria');
+      toast.error(error?.message || 'Erro ao excluir subcategoria');
     },
   });
 }
