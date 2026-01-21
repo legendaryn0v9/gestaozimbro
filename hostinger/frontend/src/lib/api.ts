@@ -45,9 +45,36 @@ async function apiRequest<T>(
       headers,
     });
 
+    // Some hosting errors return HTML (not JSON). Validate before parsing.
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
+    if (!isJson) {
+      const text = await response.text();
+      if (!response.ok) {
+        // If unauthorized, clear local session.
+        if (response.status === 401) {
+          authToken = null;
+          currentUser = null;
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('current_user');
+        }
+        return { error: `Resposta inválida do servidor (${response.status}). ${text.slice(0, 160)}` };
+      }
+
+      // No JSON but ok: treat as empty
+      return { data: undefined as unknown as T };
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('current_user');
+      }
       return { error: data.error || 'Erro desconhecido' };
     }
 
@@ -287,6 +314,14 @@ export interface Category {
   created_at: string;
 }
 
+export interface Subcategory {
+  id: string;
+  name: string;
+  category_id: string;
+  sort_order?: number | null;
+  created_at: string;
+}
+
 export const categories = {
   async list(sector?: string): Promise<ApiResponse<Category[]>> {
     const query = sector ? `?sector=${sector}` : '';
@@ -302,6 +337,31 @@ export const categories = {
 
   async delete(id: string): Promise<ApiResponse<{ success: boolean }>> {
     return apiRequest(`/categories/delete.php?id=${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ==================== SUBCATEGORIES ====================
+
+export const subcategories = {
+  async list(options?: { sector?: string; category_id?: string }): Promise<ApiResponse<Subcategory[]>> {
+    const params = new URLSearchParams();
+    if (options?.sector) params.append('sector', options.sector);
+    if (options?.category_id) params.append('category_id', options.category_id);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiRequest(`/subcategories/list.php${query}`);
+  },
+
+  async create(data: { category_id: string; name: string }): Promise<ApiResponse<Subcategory>> {
+    return apiRequest('/subcategories/create.php', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<ApiResponse<{ success: boolean }>> {
+    return apiRequest(`/subcategories/delete.php?id=${id}`, {
       method: 'DELETE',
     });
   },
@@ -362,6 +422,7 @@ export default {
   movements,
   users,
   categories,
+  subcategories,
   history,
   admin,
 };
