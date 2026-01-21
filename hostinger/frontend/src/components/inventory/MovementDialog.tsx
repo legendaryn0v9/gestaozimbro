@@ -4,11 +4,12 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { useInventoryItems, useAddMovement, MovementType, InventoryItem } from '../../hooks/useInventory';
 import { useIsAdmin } from '../../hooks/useUserRoles';
 import { useUserSector } from '../../hooks/useUserSector';
 import { useCategories } from '../../hooks/useCategories';
-import { TrendingUp, TrendingDown, ArrowRight, Package, Search, Check } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, Package, Search, Check, Wine, UtensilsCrossed } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -20,7 +21,7 @@ interface MovementDialogProps {
   sector?: 'bar' | 'cozinha';
 }
 
-const getIconComponent = (iconName: string | null): React.ComponentType<{ className?: string }> => {
+const getIconComponent = (iconName: string | null | undefined): React.ComponentType<{ className?: string }> => {
   if (!iconName) return Package;
   const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
   return icons[iconName] || Package;
@@ -42,13 +43,15 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
   const [quantity, setQuantity] = useState('');
   const [notes, setNotes] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [adminSector, setAdminSector] = useState<'bar' | 'cozinha'>('bar');
 
   const { data: allItems = [] } = useInventoryItems();
   const { isAdmin } = useIsAdmin();
   const { sector: userSector } = useUserSector();
   const addMovement = useAddMovement();
-  
-  const effectiveSector = sector || userSector;
+
+  const canChooseSector = Boolean(isAdmin && !sector && !userSector);
+  const effectiveSector = sector || userSector || (canChooseSector ? adminSector : null);
   
   const { data: barCategories = [] } = useCategories('bar');
   const { data: cozinhaCategories = [] } = useCategories('cozinha');
@@ -75,6 +78,13 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
       setSearchQuery('');
     }
   }, [open]);
+
+  // Keep dialog consistent when switching sector
+  useEffect(() => {
+    if (!open) return;
+    setSelectedItem(null);
+    setQuantity('');
+  }, [adminSector, open]);
 
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
@@ -257,13 +267,34 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           {!isDirectMode && (
             <>
+              {canChooseSector && (
+                <div className="px-4 pt-3">
+                  <Tabs
+                    value={adminSector}
+                    onValueChange={(v: string) => setAdminSector(v as 'bar' | 'cozinha')}
+                    className="w-full"
+                  >
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="bar" className="flex items-center gap-2">
+                        <Wine className="w-4 h-4" />
+                        Bar
+                      </TabsTrigger>
+                      <TabsTrigger value="cozinha" className="flex items-center gap-2">
+                        <UtensilsCrossed className="w-4 h-4" />
+                        Cozinha
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              )}
+
               <div className="px-4 py-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Buscar produto..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                     className="pl-9 bg-input border-border"
                   />
                 </div>
@@ -360,7 +391,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                   min="0.01"
                   step="0.01"
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity(e.target.value)}
                   className="bg-input border-border text-lg font-semibold"
                   required
                   autoFocus
@@ -372,7 +403,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                 <Textarea
                   id="notes"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
                   placeholder="Ex: Compra do fornecedor X..."
                   className="bg-input border-border resize-none"
                   rows={2}
