@@ -21,6 +21,7 @@ export interface User {
 }
 
 interface ApiResponse<T> {
+  success?: boolean;
   data?: T;
   error?: string;
 }
@@ -59,11 +60,11 @@ async function apiRequest<T>(
           localStorage.removeItem('auth_token');
           localStorage.removeItem('current_user');
         }
-        return { error: `Resposta inválida do servidor (${response.status}). ${text.slice(0, 160)}` };
+        return { success: false, error: `Resposta inválida do servidor (${response.status}). ${text.slice(0, 160)}` };
       }
 
       // No JSON but ok: treat as empty
-      return { data: undefined as unknown as T };
+      return { success: true, data: undefined as unknown as T };
     }
 
     const data = await response.json();
@@ -75,12 +76,12 @@ async function apiRequest<T>(
         localStorage.removeItem('auth_token');
         localStorage.removeItem('current_user');
       }
-      return { error: data.error || 'Erro desconhecido' };
+      return { success: false, error: data.error || 'Erro desconhecido' };
     }
 
-    return { data };
+    return { success: true, data };
   } catch (error) {
-    return { error: 'Erro de conexão com o servidor' };
+    return { success: false, error: 'Erro de conexão com o servidor' };
   }
 }
 
