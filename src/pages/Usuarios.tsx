@@ -266,30 +266,41 @@ export default function Usuarios() {
                             </Badge>
                           </div>
 
-                           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                             {isDono && !isSelf && (
+                           <div className="mt-4 grid grid-cols-2 gap-3">
+                             {isDono && (
                                <Select
                                  value={u.role}
                                  onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
-                                 disabled={updateRole.isPending || !canManageRole}
+                                 disabled={updateRole.isPending || isSelf || !canManageRole}
                                >
                                  <SelectTrigger className="w-full bg-input border-border">
-                                   <SelectValue />
+                                   <SelectValue placeholder="Cargo" />
                                  </SelectTrigger>
                                  <SelectContent>
-                                   <SelectItem value="admin">
-                                      Gestor
-                                   </SelectItem>
-                                   <SelectItem value="funcionario">
-                                      Funcionário
-                                   </SelectItem>
+                                   <SelectItem value="admin">Gestor</SelectItem>
+                                   <SelectItem value="funcionario">Funcionário</SelectItem>
                                  </SelectContent>
                                </Select>
                              )}
 
-                            {/* remove "Seu cargo: ..." */}
+                             {isDono && (
+                               <Select
+                                 value={u.sector || 'none'}
+                                 onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : (value as 'bar' | 'cozinha'), u.full_name, u.sector)}
+                                 disabled={updateSector.isPending || isSelf}
+                               >
+                                 <SelectTrigger className="w-full bg-input border-border">
+                                   <SelectValue placeholder="Setor" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="bar">Bar</SelectItem>
+                                   <SelectItem value="cozinha">Cozinha</SelectItem>
+                                   <SelectItem value="none">Sem setor</SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             )}
 
-                            <div className="flex items-center justify-center gap-3 sm:justify-end sm:col-span-1">
+                             <div className="flex items-center justify-center gap-3 sm:justify-end sm:col-span-2">
                               {isDono && (
                                 <EditAvatarDialog userId={u.id} userName={u.full_name} currentAvatarUrl={u.avatar_url} />
                               )}
@@ -365,12 +376,28 @@ export default function Usuarios() {
                               </div>
                             </div>
 
-                            <Badge variant="roleEmployee" className="px-3 whitespace-nowrap min-w-[9.5rem] justify-center">
+                            <Badge variant="roleEmployee" className="px-3 whitespace-nowrap min-w-[10.5rem] justify-center">
                               FUNCIONÁRIO
                             </Badge>
                           </div>
 
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            {isDono && (
+                              <Select
+                                value={u.role}
+                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
+                                disabled={updateRole.isPending || isSelf}
+                              >
+                                <SelectTrigger className="w-full bg-input border-border">
+                                  <SelectValue placeholder="Cargo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Gestor</SelectItem>
+                                  <SelectItem value="funcionario">Funcionário</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+
                             <Select
                               value={u.sector || 'none'}
                               onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : (value as 'bar' | 'cozinha'), u.full_name, u.sector)}

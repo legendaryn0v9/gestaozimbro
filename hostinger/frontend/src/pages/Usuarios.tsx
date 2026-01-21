@@ -296,44 +296,48 @@ export default function Usuarios() {
                         {/* Badges / selects (podem quebrar linha) */}
                         <div className="flex flex-wrap items-center gap-2">
                           {/* Role Badge */}
-                          <Badge className={
+                          <Badge className={`${
                             u.role === 'dono' ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' :
                             u.role === 'admin' ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' :
                             'bg-blue-500/20 text-blue-500 border-blue-500/50'
-                          }>
+                          } whitespace-nowrap min-w-[8.75rem] justify-center`}>
                             {u.role === 'dono' && <Star className="w-3 h-3 mr-1" />}
                             {u.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
                             {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
                           </Badge>
 
-                          {/* Sector Select (funcionário/gestor) */}
-                          {isDono && (u.role === 'funcionario' || u.role === 'admin') && (
-                            <Select
-                              value={u.sector || 'todos'}
-                              onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="todos">Todos</SelectItem>
-                                <SelectItem value="bar">Bar</SelectItem>
-                                <SelectItem value="cozinha">Cozinha</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
+                          {(isDono && (u.role === 'funcionario' || u.role === 'admin')) && (
+                            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                              {/* Sector Select (funcionário/gestor) */}
+                              <div className={canEditRoleOf(u) ? '' : 'col-span-2'}>
+                                <Select
+                                  value={u.sector || 'todos'}
+                                  onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
+                                >
+                                  <SelectTrigger className="w-full bg-input">
+                                    <SelectValue placeholder="Setor" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="todos">Todos</SelectItem>
+                                    <SelectItem value="bar">Bar</SelectItem>
+                                    <SelectItem value="cozinha">Cozinha</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
-                          {/* Role Select (somente quando pode editar) */}
-                          {isDono && canEditRoleOf(u) && (
-                            <Select value={u.role} onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}>
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="funcionario">Funcionário</SelectItem>
-                                <SelectItem value="admin">Gestor</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              {/* Role Select (somente quando pode editar) */}
+                              {canEditRoleOf(u) && (
+                                <Select value={u.role} onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}>
+                                  <SelectTrigger className="w-full bg-input">
+                                    <SelectValue placeholder="Cargo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="funcionario">Funcionário</SelectItem>
+                                    <SelectItem value="admin">Gestor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
                           )}
 
                           {/* remove "Seu cargo: ..." e evita modal em branco */}
