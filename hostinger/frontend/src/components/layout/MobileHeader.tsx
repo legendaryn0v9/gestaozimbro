@@ -3,9 +3,11 @@ import { Button } from '../ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Sidebar } from './Sidebar';
 import { useState } from 'react';
+import { useBranding } from '@/hooks/useBranding';
 
 export function MobileHeader() {
   const [open, setOpen] = useState(false);
+  const { data: branding } = useBranding();
 
   return (
     <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-sidebar border-b border-sidebar-border flex items-center justify-between px-4">
@@ -22,7 +24,16 @@ export function MobileHeader() {
         </Sheet>
         
         <div className="flex items-center gap-2 ml-3">
-          <h1 className="font-display font-bold text-sidebar-foreground">Zimbro</h1>
+          {branding?.dashboard_logo_url ? (
+            <img
+              src={branding.dashboard_logo_url}
+              alt="Logo"
+              className="w-8 h-auto"
+              loading="lazy"
+            />
+          ) : (
+            <h1 className="font-display font-bold text-sidebar-foreground">Zimbro</h1>
+          )}
         </div>
       </div>
     </header>

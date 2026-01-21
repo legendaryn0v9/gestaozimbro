@@ -26,6 +26,55 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+async function apiUpload<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+  const headers: HeadersInit = {};
+
+  if (authToken) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  const controller = new AbortController();
+  const timeoutMs = 15000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+      signal: controller.signal,
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    if (!isJson) {
+      const text = await response.text();
+      return { success: false, error: `Resposta inválida do servidor (${response.status}). ${text.slice(0, 160)}` };
+    }
+
+    const data = await response.json();
+    if (!response.ok) {
+      if (response.status === 401) {
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('current_user');
+      }
+      return { success: false, error: data.error || 'Erro desconhecido' };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    const message =
+      error instanceof DOMException && error.name === 'AbortError'
+        ? `Tempo limite ao conectar com o servidor (${Math.round(timeoutMs / 1000)}s).`
+        : 'Erro de conexão com o servidor';
+    return { success: false, error: message };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // Função auxiliar para fazer requisições
 async function apiRequest<T>(
   endpoint: string,
@@ -428,6 +477,48 @@ export const admin = {
   },
 };
 
+// ==================== BRANDING / UPLOADS ====================
+
+export interface BrandingSettings {
+  dashboard_logo_url: string | null;
+  login_logo_url: string | null;
+  updated_at: string | null;
+}
+
+export const branding = {
+  async get(): Promise<ApiResponse<BrandingSettings>> {
+    // endpoint returns {success, data}
+    const res = await apiRequest<{ success: boolean; data: BrandingSettings; error?: string }>('/branding/get.php');
+    if (res.error) return { success: false, error: res.error };
+    const payload = res.data as any;
+    if (payload?.success === false) return { success: false, error: payload?.error || 'Erro ao buscar branding' };
+    return { success: true, data: payload?.data };
+  },
+};
+
+export const uploads = {
+  async uploadLogo(type: 'dashboard' | 'login', file: File): Promise<ApiResponse<{ url: string }>> {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await apiUpload<{ success: boolean; data: { url: string }; error?: string }>(`/upload/logo.php?type=${encodeURIComponent(type)}`, fd);
+    if (res.error) return { success: false, error: res.error };
+    const payload = res.data as any;
+    if (payload?.success === false) return { success: false, error: payload?.error || 'Erro ao enviar logo' };
+    return { success: true, data: payload?.data };
+  },
+
+  async uploadAvatar(userId: string, file: File): Promise<ApiResponse<{ url: string; user_id: string }>> {
+    const fd = new FormData();
+    fd.append('user_id', userId);
+    fd.append('file', file);
+    const res = await apiUpload<{ success: boolean; data: { url: string; user_id: string }; error?: string }>(`/upload/avatar.php`, fd);
+    if (res.error) return { success: false, error: res.error };
+    const payload = res.data as any;
+    if (payload?.success === false) return { success: false, error: payload?.error || 'Erro ao enviar avatar' };
+    return { success: true, data: payload?.data };
+  },
+};
+
 // Export default API object
 export default {
   auth,
@@ -438,4 +529,6 @@ export default {
   subcategories,
   history,
   admin,
+  branding,
+  uploads,
 };

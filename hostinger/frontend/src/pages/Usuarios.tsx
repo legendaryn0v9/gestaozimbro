@@ -15,6 +15,8 @@ import { users } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLogAdminAction } from '../hooks/useAdminActions';
+import { BrandingManager } from '@/components/users/BrandingManager';
+import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -229,6 +231,12 @@ export default function Usuarios() {
           )}
         </div>
 
+        {isDono && (
+          <div className="mb-6 glass rounded-2xl p-4 md:p-6">
+            <BrandingManager />
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -261,6 +269,15 @@ export default function Usuarios() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Avatar edit */}
+                  {(isDono || user?.id === u.id) && (
+                    <EditAvatarDialog
+                      userId={u.id}
+                      userName={u.full_name}
+                      currentAvatarUrl={u.avatar_url || null}
+                    />
+                  )}
+
                   {/* Role Badge */}
                   <Badge className={
                     u.role === 'dono' ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' :
