@@ -3,11 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInventoryItems, useAddMovement, MovementType, InventoryItem } from '@/hooks/useInventory';
-import { useIsAdmin } from '@/hooks/useUserRoles';
 import { useUserSector } from '@/hooks/useUserSector';
 import { useCategories } from '@/hooks/useCategories';
 import { TrendingUp, TrendingDown, ArrowRight, Package, Search, Check } from 'lucide-react';
@@ -48,7 +45,6 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: allItems = [] } = useInventoryItems();
-  const { isAdmin } = useIsAdmin();
   const { sector: userSector } = useUserSector();
   const addMovement = useAddMovement();
   
@@ -276,7 +272,9 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
   };
 
   // Check if we're in "direct product" mode (preselected item)
-  const isDirectMode = Boolean(preselectedItemId && selectedItem);
+  // Important: consider direct mode as soon as we have an id, even if the item
+  // data hasn't loaded yet, so we don't flash the selection list.
+  const isDirectMode = Boolean(preselectedItemId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -371,8 +369,15 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
             </>
           )}
 
-          {/* Selected Item Details & Quantity */}
-          {selectedItem && (
+           {/* Direct mode loading state (while items load and we resolve the preselected item) */}
+           {isDirectMode && !selectedItem && (
+             <div className="flex-1 flex items-center justify-center p-8">
+               <div className="text-sm text-muted-foreground">Carregando produto...</div>
+             </div>
+           )}
+
+           {/* Selected Item Details & Quantity */}
+           {selectedItem && (
             <div className="border-t border-border p-4 space-y-4 bg-background/50">
               <div className="p-3 rounded-lg bg-secondary/50">
                 <div className="flex items-center justify-between mb-2">
