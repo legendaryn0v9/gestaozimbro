@@ -5,6 +5,8 @@ import { useAuth } from '../lib/auth';
 export type { AdminAction };
 
 export function useAdminActions(date?: string) {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['admin-actions', date],
     queryFn: async () => {
@@ -12,6 +14,7 @@ export function useAdminActions(date?: string) {
       if (result.error) throw new Error(result.error);
       return result.data as AdminAction[];
     },
+    enabled: !!user,
   });
 }
 
@@ -56,6 +59,7 @@ export function getActionLabel(actionType: string): string {
     'update_role': 'Alterou cargo',
     'update_sector': 'Alterou setor',
     'update_avatar': 'Alterou foto',
+    'update_password': 'Alterou senha',
   };
   return labels[actionType] || actionType;
 }
@@ -68,6 +72,7 @@ export function getActionIcon(actionType: string): string {
     'update_role': '👑',
     'update_sector': '🏢',
     'update_avatar': '📷',
+    'update_password': '🔐',
   };
   return icons[actionType] || '📋';
 }

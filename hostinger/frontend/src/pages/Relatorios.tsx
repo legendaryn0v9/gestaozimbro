@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ReportMovementList } from '@/components/inventory/ReportMovementList';
-import { useStockMovements, useMovementDates, StockMovement } from '@/hooks/useInventory';
+import { useStockMovements, useMovementDates, useProductEditHistory, StockMovement } from '@/hooks/useInventory';
 import { useIsAdmin, useIsDono, useAllUsersWithRoles } from '@/hooks/useUserRoles';
 import { useAdminActions, getActionLabel, getActionIcon } from '@/hooks/useAdminActions';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export default function Relatorios() {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const { data: movements = [], isLoading } = useStockMovements(formattedDate);
   const { data: movementDates = [] } = useMovementDates();
+  const { data: productEdits = [], isLoading: isLoadingEdits } = useProductEditHistory(formattedDate);
   const { data: adminActions = [], isLoading: isLoadingActions } = useAdminActions(formattedDate);
   const { isAdmin } = useIsAdmin();
   const { isDono } = useIsDono();
@@ -217,6 +218,20 @@ export default function Relatorios() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  // Helper to get field label for product edits
+  const getFieldLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      name: 'Nome',
+      quantity: 'Quantidade',
+      price: 'Preço',
+      unit: 'Unidade',
+      category: 'Categoria',
+      description: 'Descrição',
+      min_quantity: 'Qtd. Mínima',
+    };
+    return labels[field] || field;
+  };
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
@@ -313,18 +328,21 @@ export default function Relatorios() {
               </Button>
             </div>
           </div>
-
         </div>
 
         {/* Content - Different for each role */}
         <div className="glass rounded-2xl p-4 md:p-6">
-          {/* For Admin (Gestor) or Dono: Show tabs with movements and admin actions */}
+          {/* For Admin (Gestor) or Dono: Show tabs with movements, product edits, and admin actions */}
           {isAdmin ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-4 flex-wrap h-auto">
                 <TabsTrigger value="movements" className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
                   Movimentações
+                </TabsTrigger>
+                <TabsTrigger value="product-edits" className="flex items-center gap-2">
+                  <Pencil className="w-4 h-4" />
+                  Edições de Produtos
                 </TabsTrigger>
                 <TabsTrigger value="admin-actions" className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
@@ -350,6 +368,56 @@ export default function Relatorios() {
                 )}
               </TabsContent>
 
+              <TabsContent value="product-edits">
+                <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
+                  Edições de Produtos de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                </h2>
+                
+                {isLoadingEdits ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-16 rounded-xl bg-secondary/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : productEdits.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Pencil className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg">Nenhuma edição de produto neste dia</p>
+                    <p className="text-sm">Alterações em nome, quantidade, preço etc. aparecerão aqui</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {productEdits.map((edit) => (
+                      <div
+                        key={edit.id}
+                        className="p-4 rounded-xl bg-secondary/30 border border-border"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                              <Pencil className="w-5 h-5 text-amber-500" />
+                            </div>
+                            <div>
+                              <p className="font-semibold">{edit.item_name_snapshot}</p>
+                              <div className="text-sm text-muted-foreground">
+                                <span className="font-medium">{getFieldLabel(edit.field_changed)}:</span>{' '}
+                                <span className="text-red-400 line-through">{edit.old_value || '(vazio)'}</span>
+                                {' → '}
+                                <span className="text-green-400">{edit.new_value || '(vazio)'}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right text-sm text-muted-foreground">
+                            <p>{format(new Date(edit.created_at), 'HH:mm')}</p>
+                            <p>{edit.user_name || 'Usuário'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
               <TabsContent value="admin-actions">
                 <h2 className="text-lg md:text-xl font-display font-semibold mb-4">
                   Ações Administrativas de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
@@ -369,55 +437,60 @@ export default function Relatorios() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {adminActions.map((action) => (
-                      <div
-                        key={action.id}
-                        className="p-4 rounded-xl bg-secondary/30 border border-border"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-xl">
-                              {getActionIcon(action.action_type)}
-                            </div>
-                            <div>
-                              <p className="font-semibold">{getActionLabel(action.action_type)}</p>
-                              <div className="text-sm text-muted-foreground">
-                                {action.target_user_name && (
-                                  <span>Usuário: <strong>{action.target_user_name}</strong></span>
-                                )}
-                                {action.details && action.action_type === 'update_role' && (
-                                  <span className="ml-2">
-                                    ({action.details.old_role} → {action.details.new_role})
-                                  </span>
-                                )}
-                                {action.details && action.action_type === 'update_sector' && (
-                                  <span className="ml-2">
-                                    ({action.details.old_sector || 'nenhum'} → {action.details.new_sector || 'nenhum'})
-                                  </span>
-                                )}
-                                {action.details && action.action_type === 'create_employee' && (
-                                  <span className="ml-2">
-                                    (Setor: {action.details.sector})
-                                  </span>
-                                )}
+                    {adminActions.map((action) => {
+                      // Parse details if it's a string
+                      let details = action.details;
+                      if (typeof details === 'string') {
+                        try {
+                          details = JSON.parse(details);
+                        } catch {
+                          details = null;
+                        }
+                      }
+                      const detailsObj = details as Record<string, any> | null;
+                      
+                      return (
+                        <div
+                          key={action.id}
+                          className="p-4 rounded-xl bg-secondary/30 border border-border"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-xl">
+                                {getActionIcon(action.action_type)}
+                              </div>
+                              <div>
+                                <p className="font-semibold">{getActionLabel(action.action_type)}</p>
+                                <div className="text-sm text-muted-foreground">
+                                  {action.target_user_name && (
+                                    <span>Usuário: <strong>{action.target_user_name}</strong></span>
+                                  )}
+                                  {detailsObj && action.action_type === 'update_role' && (
+                                    <span className="ml-2">
+                                      ({detailsObj.old_role} → {detailsObj.new_role})
+                                    </span>
+                                  )}
+                                  {detailsObj && action.action_type === 'update_sector' && (
+                                    <span className="ml-2">
+                                      ({detailsObj.old_sector || 'nenhum'} → {detailsObj.new_sector || 'nenhum'})
+                                    </span>
+                                  )}
+                                  {detailsObj && action.action_type === 'create_employee' && (
+                                    <span className="ml-2">
+                                      (Setor: {detailsObj.sector})
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-right text-sm text-muted-foreground flex items-center gap-2">
-                            <div>
+                            <div className="text-right text-sm text-muted-foreground">
                               <p>{format(new Date(action.created_at), 'HH:mm')}</p>
-                              <p>{action.profiles?.full_name || 'Usuário'}</p>
+                              <p>{action.user_name || 'Usuário'}</p>
                             </div>
-                            {action.profiles?.avatar_url && (
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={action.profiles.avatar_url} />
-                                <AvatarFallback>{getInitials(action.profiles.full_name || '')}</AvatarFallback>
-                              </Avatar>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>
