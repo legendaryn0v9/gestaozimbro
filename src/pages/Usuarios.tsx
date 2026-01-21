@@ -282,16 +282,10 @@ export default function Usuarios() {
                                  </SelectTrigger>
                                  <SelectContent>
                                    <SelectItem value="admin">
-                                     <div className="flex items-center gap-2">
-                                       <Crown className="w-4 h-4" />
-                                       Gestor
-                                     </div>
+                                      Gestor
                                    </SelectItem>
                                    <SelectItem value="funcionario">
-                                     <div className="flex items-center gap-2">
-                                       <UserCheck className="w-4 h-4" />
-                                       Funcionário
-                                     </div>
+                                      Funcionário
                                    </SelectItem>
                                  </SelectContent>
                                </Select>
