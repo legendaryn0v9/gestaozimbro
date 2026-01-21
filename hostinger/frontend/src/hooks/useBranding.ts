@@ -32,3 +32,20 @@ export function useUploadLogo() {
     },
   });
 }
+
+export function useUpdateSystemName() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ systemName }: { systemName: string }) => {
+      if (!user) throw new Error('Usuário não autenticado');
+      const res = await branding.updateSystemName(systemName);
+      if (res.error) throw new Error(res.error);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branding'] });
+    },
+  });
+}

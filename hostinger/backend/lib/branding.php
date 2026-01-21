@@ -18,6 +18,7 @@ function branding_get_settings() {
         return [
             'dashboard_logo_url' => null,
             'login_logo_url' => null,
+            'system_name' => 'Sistema Zimbro',
             'updated_at' => null,
         ];
     }
@@ -27,6 +28,7 @@ function branding_get_settings() {
         return [
             'dashboard_logo_url' => null,
             'login_logo_url' => null,
+            'system_name' => 'Sistema Zimbro',
             'updated_at' => null,
         ];
     }
@@ -36,6 +38,7 @@ function branding_get_settings() {
         return [
             'dashboard_logo_url' => null,
             'login_logo_url' => null,
+            'system_name' => 'Sistema Zimbro',
             'updated_at' => null,
         ];
     }
@@ -43,6 +46,7 @@ function branding_get_settings() {
     return [
         'dashboard_logo_url' => $data['dashboard_logo_url'] ?? null,
         'login_logo_url' => $data['login_logo_url'] ?? null,
+        'system_name' => $data['system_name'] ?? 'Sistema Zimbro',
         'updated_at' => $data['updated_at'] ?? null,
     ];
 }
@@ -53,6 +57,7 @@ function branding_save_settings($settings) {
     $next = [
         'dashboard_logo_url' => array_key_exists('dashboard_logo_url', $settings) ? $settings['dashboard_logo_url'] : ($current['dashboard_logo_url'] ?? null),
         'login_logo_url' => array_key_exists('login_logo_url', $settings) ? $settings['login_logo_url'] : ($current['login_logo_url'] ?? null),
+        'system_name' => array_key_exists('system_name', $settings) ? $settings['system_name'] : ($current['system_name'] ?? 'Sistema Zimbro'),
         'updated_at' => date('c'),
     ];
 

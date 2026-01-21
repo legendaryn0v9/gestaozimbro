@@ -101,7 +101,9 @@ export default function Auth() {
                 <span className="text-4xl font-bold text-primary-foreground">Z</span>
               </div>
             )}
-            <h1 className="text-2xl font-display font-bold text-foreground">Sistema Zimbro</h1>
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              {branding?.system_name || 'Sistema Zimbro'}
+            </h1>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

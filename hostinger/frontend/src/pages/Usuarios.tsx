@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLogAdminAction } from '../hooks/useAdminActions';
 import { BrandingManager } from '@/components/users/BrandingManager';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
+import { EditUserDialog } from '@/components/users/EditUserDialog';
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -144,7 +145,7 @@ export default function Usuarios() {
           </div>
 
           {/* Create Employee Button */}
-          {isDono && (
+          {isAdmin && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-amber text-primary-foreground">
@@ -275,6 +276,16 @@ export default function Usuarios() {
                       userId={u.id}
                       userName={u.full_name}
                       currentAvatarUrl={u.avatar_url || null}
+                    />
+                  )}
+
+                  {/* Edit user info (Dono only) */}
+                  {isDono && (
+                    <EditUserDialog
+                      userId={u.id}
+                      userName={u.full_name}
+                      userPhone={u.phone}
+                      userSector={u.sector}
                     />
                   )}
 

@@ -482,6 +482,7 @@ export const admin = {
 export interface BrandingSettings {
   dashboard_logo_url: string | null;
   login_logo_url: string | null;
+  system_name?: string | null;
   updated_at: string | null;
 }
 
@@ -492,6 +493,21 @@ export const branding = {
     if (res.error) return { success: false, error: res.error };
     const payload = res.data as any;
     if (payload?.success === false) return { success: false, error: payload?.error || 'Erro ao buscar branding' };
+    return { success: true, data: payload?.data };
+  },
+
+  async updateSystemName(system_name: string): Promise<ApiResponse<BrandingSettings>> {
+    const res = await apiRequest<{ success: boolean; data: BrandingSettings; error?: string }>(
+      '/branding/update.php',
+      {
+        method: 'PUT',
+        body: JSON.stringify({ system_name }),
+      }
+    );
+
+    if (res.error) return { success: false, error: res.error };
+    const payload = res.data as any;
+    if (payload?.success === false) return { success: false, error: payload?.error || 'Erro ao salvar nome' };
     return { success: true, data: payload?.data };
   },
 };

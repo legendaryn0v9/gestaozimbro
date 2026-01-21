@@ -83,6 +83,7 @@ echo "Copiando componentes de usuários..."
 mkdir -p "src/components/users"
 cp -f "hostinger/frontend/src/components/users/EditAvatarDialog.tsx" "src/components/users/EditAvatarDialog.tsx" 2>/dev/null && echo "- EditAvatarDialog.tsx copiado"
 cp -f "hostinger/frontend/src/components/users/BrandingManager.tsx" "src/components/users/BrandingManager.tsx" 2>/dev/null && echo "- BrandingManager.tsx copiado"
+cp -f "hostinger/frontend/src/components/users/EditUserDialog.tsx" "src/components/users/EditUserDialog.tsx" 2>/dev/null && echo "- EditUserDialog.tsx copiado"
 
 echo "Arquivos substituídos!"
 echo ""

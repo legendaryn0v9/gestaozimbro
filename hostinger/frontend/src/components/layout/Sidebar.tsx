@@ -66,7 +66,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="h-full lg:fixed lg:left-0 lg:top-0 lg:h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-6 border-b border-sidebar-border hidden lg:block">
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center gap-2">
           {branding?.dashboard_logo_url ? (
             <img
               src={branding.dashboard_logo_url}
@@ -77,6 +77,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           ) : (
             <h1 className="font-display font-bold text-2xl text-sidebar-foreground">Zimbro</h1>
           )}
+          <div className="text-sm font-medium text-sidebar-foreground/80 text-center leading-tight">
+            {branding?.system_name || 'Sistema Zimbro'}
+          </div>
         </div>
       </div>
 
