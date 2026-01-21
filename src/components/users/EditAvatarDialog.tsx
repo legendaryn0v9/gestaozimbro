@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Camera, Trash2, Upload, User } from 'lucide-react';
+import { Camera, Trash2, Upload } from 'lucide-react';
 import { uploadAvatar } from '@/hooks/useUserProfile';
+import { useAuth } from '@/lib/auth';
 
 interface EditAvatarDialogProps {
   userId: string;
@@ -22,6 +23,10 @@ export function EditAvatarDialog({ userId, userName, currentAvatarUrl }: EditAva
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Regra: apenas Dono pode gerenciar fotos (inclusive a própria)
+  if (user?.role !== 'dono') return null;
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

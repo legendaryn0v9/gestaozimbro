@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAllUsersWithRoles, useUpdateUserRole, useIsAdmin, useIsDono, useDeleteUser, useUpdateUserSector, AppRole } from '@/hooks/useUserRoles';
 import { useAuth } from '@/lib/auth';
@@ -29,7 +29,7 @@ export default function Usuarios() {
   const updateSector = useUpdateUserSector();
   const deleteUser = useDeleteUser();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   // Real-time subscription for profile updates
   useEffect(() => {
@@ -166,11 +166,13 @@ export default function Usuarios() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1 -right-1">
-                        <EditAvatarDialog 
-                          userId={u.id} 
-                          userName={u.full_name} 
-                          currentAvatarUrl={u.avatar_url} 
-                        />
+                        {isDono && (
+                          <EditAvatarDialog 
+                            userId={u.id} 
+                            userName={u.full_name} 
+                            currentAvatarUrl={u.avatar_url} 
+                          />
+                        )}
                       </div>
                     </div>
                     <div>
