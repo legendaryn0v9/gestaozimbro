@@ -28,16 +28,19 @@ export function useCategories(sector?: 'bar' | 'cozinha' | string) {
   return useQuery({
     queryKey: ['categories', sector],
     queryFn: async () => {
-      const [catRes, subRes] = await Promise.all([
-        categories.list(sector),
-        subcategories.list({ sector: sector || undefined }),
-      ]);
-
+      // Fetch categories first so the UI can render even if subcategories endpoint is failing.
+      const catRes = await categories.list(sector);
       if (catRes.error) throw new Error(catRes.error);
+
       // Subcategories are optional for the main screens.
-      // If the backend schema is missing sort_order (older installs), the endpoint may error.
-      // In that case, keep the UI working with categories only.
-      const subcategoriesData = subRes.error ? [] : (subRes.data || []);
+      // If the endpoint errors (or times out on shared hosting), keep the UI working.
+      let subcategoriesData: ApiSubcategory[] = [];
+      try {
+        const subRes = await subcategories.list({ sector: sector || undefined });
+        subcategoriesData = subRes.error ? [] : (subRes.data || []);
+      } catch {
+        subcategoriesData = [];
+      }
 
       const subsByCategory = new Map<string, Subcategory[]>();
       subcategoriesData.forEach((s: ApiSubcategory) => {

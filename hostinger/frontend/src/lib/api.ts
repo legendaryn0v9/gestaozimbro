@@ -40,10 +40,16 @@ async function apiRequest<T>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${authToken}`;
   }
 
+  // Avoid infinite pending requests on shared hosting.
+  const controller = new AbortController();
+  const timeoutMs = 15000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+      signal: controller.signal,
     });
 
     // Some hosting errors return HTML (not JSON). Validate before parsing.
@@ -81,7 +87,13 @@ async function apiRequest<T>(
 
     return { success: true, data };
   } catch (error) {
-    return { success: false, error: 'Erro de conexão com o servidor' };
+    const message =
+      error instanceof DOMException && error.name === 'AbortError'
+        ? `Tempo limite ao conectar com o servidor (${Math.round(timeoutMs / 1000)}s).`
+        : 'Erro de conexão com o servidor';
+    return { success: false, error: message };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
