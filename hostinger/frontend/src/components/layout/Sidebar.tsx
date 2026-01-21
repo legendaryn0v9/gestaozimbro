@@ -11,6 +11,7 @@ import {
   Users,
   Crown,
   Star,
+  Palette,
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { useIsAdmin, useIsDono } from '../../hooks/useUserRoles';
@@ -29,8 +30,9 @@ const baseMenuItems = [
   { icon: ClipboardList, label: 'Relatórios', path: '/relatorios', sector: null },
 ];
 
-const adminMenuItems = [
+const adminMenuItems: Array<{ icon: any; label: string; path: string; donoOnly?: boolean }> = [
   { icon: Users, label: 'Usuários', path: '/usuarios' },
+  { icon: Palette, label: 'Personalização', path: '/personalizacao', donoOnly: true },
 ];
 
 interface SidebarProps {
@@ -104,14 +106,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           );
         })}
 
-        {isAdmin && (
+        {(isAdmin || isDono) && (
           <>
             <div className="pt-4 pb-2">
               <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Administração
               </p>
             </div>
-            {adminMenuItems.map((item) => {
+            {adminMenuItems.filter((item) => !item.donoOnly || isDono).map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link

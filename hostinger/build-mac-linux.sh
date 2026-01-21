@@ -59,6 +59,7 @@ cp -f "hostinger/frontend/src/pages/Entrada.tsx" "src/pages/Entrada.tsx" 2>/dev/
 cp -f "hostinger/frontend/src/pages/Saida.tsx" "src/pages/Saida.tsx" 2>/dev/null && echo "- Saida.tsx copiado"
 cp -f "hostinger/frontend/src/pages/Relatorios.tsx" "src/pages/Relatorios.tsx" 2>/dev/null && echo "- Relatorios.tsx copiado"
 cp -f "hostinger/frontend/src/pages/Usuarios.tsx" "src/pages/Usuarios.tsx" 2>/dev/null && echo "- Usuarios.tsx copiado"
+cp -f "hostinger/frontend/src/pages/Personalizacao.tsx" "src/pages/Personalizacao.tsx" 2>/dev/null && echo "- Personalizacao.tsx copiado"
 cp -f "hostinger/frontend/src/pages/AdminFormat.tsx" "src/pages/AdminFormat.tsx" 2>/dev/null && echo "- AdminFormat.tsx copiado"
 cp -f "hostinger/frontend/src/pages/NotFound.tsx" "src/pages/NotFound.tsx" 2>/dev/null && echo "- NotFound.tsx copiado"
 

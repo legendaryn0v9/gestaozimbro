@@ -15,7 +15,6 @@ import { users } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLogAdminAction } from '../hooks/useAdminActions';
-import { BrandingManager } from '@/components/users/BrandingManager';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
 import { EditUserDialog } from '@/components/users/EditUserDialog';
 
@@ -231,12 +230,6 @@ export default function Usuarios() {
             </Dialog>
           )}
         </div>
-
-        {isDono && (
-          <div className="mb-6 glass rounded-2xl p-4 md:p-6">
-            <BrandingManager />
-          </div>
-        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
