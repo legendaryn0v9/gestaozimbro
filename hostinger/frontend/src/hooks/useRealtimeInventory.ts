@@ -11,12 +11,17 @@ export function useRealtimeInventory() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // No Hostinger usamos polling a cada 30 segundos 
-    // para simular atualizações em tempo real
+    // No Hostinger usamos polling (aqui: 5s) para simular atualizações em tempo real
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
-    }, 30000);
+      queryClient.invalidateQueries({ queryKey: ['movement-dates'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['subcategories'] });
+      queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['branding'] });
+    }, 5000);
 
     return () => {
       clearInterval(interval);
