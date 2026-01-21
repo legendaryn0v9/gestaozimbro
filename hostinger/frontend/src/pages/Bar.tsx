@@ -36,14 +36,17 @@ export default function Bar() {
   const [saidaDialogOpen, setSaidaDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string>();
 
-  const { data: dynamicCategories = [], isLoading: categoriesLoading } = useCategories('bar');
-  const { data: items = [], isLoading } = useInventoryItems('bar');
+  const { data: dynamicCategories = [], isLoading: categoriesLoading, isError: categoriesError } = useCategories('bar');
+  const { data: items = [], isLoading, isError: itemsError } = useInventoryItems('bar');
 
   useEffect(() => {
     if (!sectorLoading && !canAccessBar && !isAdmin) {
       navigate('/cozinha');
     }
   }, [canAccessBar, sectorLoading, isAdmin, navigate]);
+
+  // Treat error as loaded (show empty state instead of infinite loading)
+  const isDataLoading = (categoriesLoading && !categoriesError) || (isLoading && !itemsError);
 
   const filteredItems = useMemo(() => {
     if (!search) return items;
@@ -59,7 +62,7 @@ export default function Bar() {
     setSaidaDialogOpen(true);
   };
 
-  if (sectorLoading || categoriesLoading) {
+  if (sectorLoading || isDataLoading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
