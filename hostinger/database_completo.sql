@@ -45,10 +45,25 @@ CREATE TABLE IF NOT EXISTS `categories` (
     `id` VARCHAR(36) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
     `sector` ENUM('bar', 'cozinha') NOT NULL,
+    `icon` VARCHAR(50) DEFAULT 'Package',
+    `gradient` VARCHAR(100) DEFAULT 'from-amber-500 to-orange-600',
+    `sort_order` INT DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    KEY `idx_sector` (`sector`)
+    KEY `idx_sector` (`sector`),
+    KEY `idx_sort_order` (`sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- ATUALIZAÇÃO (se você já tem o banco criado)
+-- Rode estes comandos UMA VEZ para adicionar as colunas novas
+-- sem apagar usuários/dados existentes.
+-- =====================================================
+-- ALTER TABLE `categories` ADD COLUMN `icon` VARCHAR(50) DEFAULT 'Package';
+-- ALTER TABLE `categories` ADD COLUMN `gradient` VARCHAR(100) DEFAULT 'from-amber-500 to-orange-600';
+-- ALTER TABLE `categories` ADD COLUMN `sort_order` INT DEFAULT 0;
+-- ALTER TABLE `categories` ADD COLUMN `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 
 -- Tabela de Subcategorias
 CREATE TABLE IF NOT EXISTS `subcategories` (
