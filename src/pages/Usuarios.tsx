@@ -7,14 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Shield, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, Star } from 'lucide-react';
+import { Users, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, Star } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
 import { EditEmployeeDialog } from '@/components/users/EditEmployeeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
 
 // Default avatars based on role
 const DEFAULT_GESTOR_AVATAR = 'https://klltuuwzedbhkbykayyn.supabase.co/storage/v1/object/public/avatars/404ae1ce-6bf0-41d4-a479-2c97f7d97841-1768175055101.png';
@@ -29,7 +28,6 @@ export default function Usuarios() {
   const updateSector = useUpdateUserSector();
   const deleteUser = useDeleteUser();
   const queryClient = useQueryClient();
-  const { toast: _toast } = useToast();
 
   // Real-time subscription for profile updates
   useEffect(() => {
@@ -96,37 +94,49 @@ export default function Usuarios() {
   };
 
   const getSectorIcon = (sector: 'bar' | 'cozinha' | null) => {
-    if (sector === 'bar') return <Wine className="w-4 h-4 text-amber-500" />;
-    if (sector === 'cozinha') return <UtensilsCrossed className="w-4 h-4 text-emerald-500" />;
+    if (sector === 'bar') return <Wine className="w-4 h-4 text-primary" />;
+    if (sector === 'cozinha') return <UtensilsCrossed className="w-4 h-4 text-success" />;
     return null;
   };
 
   // Filter out the hidden super admin user (full_name === 'admin')
   const filteredUsers = users.filter(u => u.full_name.toLowerCase() !== 'admin');
 
+  const donoUsers = filteredUsers.filter((u) => u.role === 'dono');
+  const gestorUsers = filteredUsers.filter((u) => u.role === 'admin');
+  const funcionarioUsers = filteredUsers.filter((u) => u.role === 'funcionario');
+
+  const SectionHeader = ({ title, count }: { title: string; count: number }) => (
+    <div className="flex items-center justify-between px-1 pt-6 pb-3">
+      <h2 className="text-sm tracking-widest text-muted-foreground font-display">{title}</h2>
+      <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+    </div>
+  );
+
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Gerenciar Usuários</h1>
-              <p className="text-sm text-muted-foreground">Gerencie os cargos, setores e fotos dos funcionários</p>
+        <header className="mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary/15 border border-border flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Gerencie os Usuários</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">Cargos, setores e fotos</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <CreateEmployeeDialog />
-          </div>
-        </div>
 
-        <div className="glass rounded-xl p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Shield className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Funcionários ({filteredUsers.length})</h2>
+          <div className="mt-5">
+            <div className="w-full sm:w-auto">
+              <CreateEmployeeDialog />
+            </div>
           </div>
+        </header>
+
+        <main className="glass rounded-xl p-4 sm:p-6">
 
           {isLoading ? (
             <div className="space-y-4">
@@ -139,194 +149,347 @@ export default function Usuarios() {
               Nenhum usuário encontrado
             </p>
           ) : (
-            <div className="space-y-3">
-              {filteredUsers.map((u) => (
-                <div
-                  key={u.id}
-                  className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-lg bg-muted/50 border border-border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Avatar className={`h-12 w-12 border-2 ${
-                        u.role === 'dono' 
-                          ? 'border-purple-500/50' 
-                          : u.role === 'admin' 
-                            ? 'border-amber-500/50' 
-                            : 'border-blue-500/50'
-                      }`}>
-                        <AvatarImage src={u.avatar_url || undefined} alt={u.full_name} />
-                        <AvatarFallback className={
-                          u.role === 'dono'
-                            ? 'bg-gradient-to-br from-purple-500 to-pink-600 text-white'
-                            : u.role === 'admin' 
-                              ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white' 
-                              : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-white'
-                        }>
-                          {getInitials(u.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -bottom-1 -right-1">
-                        {isDono && (
-                          <EditAvatarDialog 
-                            userId={u.id} 
-                            userName={u.full_name} 
-                            currentAvatarUrl={u.avatar_url} 
-                          />
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{u.full_name}</p>
-                      {u.phone && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          {u.phone}
-                        </p>
-                      )}
-                    </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-2">{filteredUsers.length} usuário(s)</div>
+
+              {donoUsers.length > 0 && (
+                <section>
+                  <SectionHeader title="DONO" count={donoUsers.length} />
+                  <div className="space-y-4">
+                    {donoUsers.map((u) => {
+                      const isSelf = u.id === user?.id;
+                      const canDelete = isDono && !isSelf;
+                      return (
+                        <div key={u.id} className="rounded-xl border border-border bg-card/50 p-4 shadow-[var(--shadow-card)]">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-14 w-14 border border-border">
+                                <AvatarImage src={u.avatar_url || undefined} alt={u.full_name} />
+                                <AvatarFallback className="bg-muted">{getInitials(u.full_name)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-display text-lg leading-none">{u.full_name}</p>
+                                  {isSelf && (
+                                    <Badge variant="outline" className="border-primary text-primary">Você</Badge>
+                                  )}
+                                </div>
+                                {u.phone && (
+                                  <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
+                                    <Phone className="w-3.5 h-3.5" />
+                                    {u.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <Badge variant="outline" className="border-primary text-primary">
+                              <Star className="w-3.5 h-3.5 mr-1" />
+                              DONO
+                            </Badge>
+                          </div>
+
+                          <div className="mt-5 flex items-center justify-center gap-3">
+                            {isDono && (
+                              <EditAvatarDialog userId={u.id} userName={u.full_name} currentAvatarUrl={u.avatar_url} />
+                            )}
+                            {isDono && (
+                              <EditEmployeeDialog user={{ id: u.id, full_name: u.full_name, phone: u.phone, sector: u.sector }} />
+                            )}
+
+                            {isDono && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={!canDelete}
+                                    className="h-9 w-9 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                    aria-label="Excluir usuário"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir <strong>{u.full_name}</strong>? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                      disabled={!canDelete}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+                </section>
+              )}
 
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    {u.id === user?.id ? (
-                      <Badge variant="outline" className="border-primary text-primary">
-                        Você
-                      </Badge>
-                    ) : (
-                      <>
-                        {/* Sector Select - Only for funcionarios */}
-                        {u.role === 'funcionario' && (
-                          <Select
-                            value={u.sector || 'none'}
-                            onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : value as 'bar' | 'cozinha', u.full_name, u.sector)}
-                            disabled={updateSector.isPending}
-                          >
-                            <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
-                              <SelectValue placeholder="Setor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bar">
+              {gestorUsers.length > 0 && (
+                <section>
+                  <SectionHeader title="GESTORES" count={gestorUsers.length} />
+                  <div className="space-y-4">
+                    {gestorUsers.map((u) => {
+                      const isSelf = u.id === user?.id;
+                      const canManageRole = isDono && !isSelf;
+                      const canDelete = isDono && !isSelf;
+                      return (
+                        <div key={u.id} className="rounded-xl border border-border bg-card/50 p-4 shadow-[var(--shadow-card)]">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-14 w-14 border border-border">
+                                <AvatarImage src={u.avatar_url || undefined} alt={u.full_name} />
+                                <AvatarFallback className="bg-muted">{getInitials(u.full_name)}</AvatarFallback>
+                              </Avatar>
+                              <div>
                                 <div className="flex items-center gap-2">
-                                  <Wine className="w-4 h-4 text-amber-500" />
-                                  Bar
+                                  <p className="font-display text-lg leading-none">{u.full_name}</p>
+                                  {isSelf && (
+                                    <Badge variant="outline" className="border-primary text-primary">Você</Badge>
+                                  )}
                                 </div>
-                              </SelectItem>
-                              <SelectItem value="cozinha">
-                                <div className="flex items-center gap-2">
-                                  <UtensilsCrossed className="w-4 h-4 text-emerald-500" />
-                                  Cozinha
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                                {u.phone && (
+                                  <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
+                                    <Phone className="w-3.5 h-3.5" />
+                                    {u.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
 
-                        {/* Role Select - Only for Dono */}
-                        {isDono && (
-                          <Select
-                            value={u.role}
-                            onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
-                            disabled={updateRole.isPending}
-                          >
-                            <SelectTrigger className="w-32 sm:w-36 bg-input border-border">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="dono">
-                                <div className="flex items-center gap-2">
-                                  <Star className="w-4 h-4 text-purple-500" />
-                                  Dono
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="admin">
-                                <div className="flex items-center gap-2">
-                                  <Crown className="w-4 h-4 text-amber-500" />
-                                  Gestor
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="funcionario">
-                                <div className="flex items-center gap-2">
-                                  <UserCheck className="w-4 h-4 text-blue-500" />
-                                  Funcionário
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                            <Badge variant="outline" className="border-border text-foreground">
+                              <Crown className="w-3.5 h-3.5 mr-1" />
+                              GESTOR
+                            </Badge>
+                          </div>
 
-
-                        {/* Edit Employee Button - Only for Dono */}
-                        {isDono && (
-                          <EditEmployeeDialog user={{
-                            id: u.id,
-                            full_name: u.full_name,
-                            phone: u.phone,
-                            sector: u.sector
-                          }} />
-                        )}
-
-                        {/* Delete Button - Only for Dono */}
-                        {isDono && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {isDono && (
+                              <Select
+                                value={u.role}
+                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
+                                disabled={updateRole.isPending || !canManageRole}
                               >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir <strong>{u.full_name}</strong>? 
-                                  Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteUser(u.id, u.full_name)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Badges */}
-                    <div className="flex items-center gap-2">
-                      {u.sector && u.role === 'funcionario' && (
-                        <Badge className={
-                          u.sector === 'bar' 
-                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
-                            : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/50'
-                        }>
-                          {getSectorIcon(u.sector)}
-                          <span className="ml-1">{u.sector === 'bar' ? 'Bar' : 'Cozinha'}</span>
-                        </Badge>
-                      )}
-                      <Badge className={
-                        u.role === 'dono'
-                          ? 'bg-purple-500/20 text-purple-500 border-purple-500/50'
-                          : u.role === 'admin' 
-                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' 
-                            : 'bg-blue-500/20 text-blue-500 border-blue-500/50'
-                      }>
-                        {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
-                      </Badge>
-                    </div>
+                                <SelectTrigger className="w-full bg-input border-border">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">
+                                    <div className="flex items-center gap-2">
+                                      <Crown className="w-4 h-4" />
+                                      Gestor
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="funcionario">
+                                    <div className="flex items-center gap-2">
+                                      <UserCheck className="w-4 h-4" />
+                                      Funcionário
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+
+                            <div className="flex items-center justify-center gap-3 sm:justify-end sm:col-span-1">
+                              {isDono && (
+                                <EditAvatarDialog userId={u.id} userName={u.full_name} currentAvatarUrl={u.avatar_url} />
+                              )}
+                              {isDono && (
+                                <EditEmployeeDialog user={{ id: u.id, full_name: u.full_name, phone: u.phone, sector: u.sector }} />
+                              )}
+                              {isDono && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      disabled={!canDelete}
+                                      className="h-9 w-9 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir <strong>{u.full_name}</strong>? Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                        disabled={!canDelete}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
+                </section>
+              )}
+
+              {funcionarioUsers.length > 0 && (
+                <section>
+                  <SectionHeader title="FUNCIONÁRIOS" count={funcionarioUsers.length} />
+                  <div className="space-y-4">
+                    {funcionarioUsers.map((u) => {
+                      const isSelf = u.id === user?.id;
+                      const canManageRole = isDono && !isSelf;
+                      const canDelete = isDono && !isSelf;
+                      return (
+                        <div key={u.id} className="rounded-xl border border-border bg-card/50 p-4 shadow-[var(--shadow-card)]">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-14 w-14 border border-border">
+                                <AvatarImage src={u.avatar_url || undefined} alt={u.full_name} />
+                                <AvatarFallback className="bg-muted">{getInitials(u.full_name)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-display text-lg leading-none">{u.full_name}</p>
+                                  {isSelf && (
+                                    <Badge variant="outline" className="border-primary text-primary">Você</Badge>
+                                  )}
+                                </div>
+                                {u.phone && (
+                                  <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
+                                    <Phone className="w-3.5 h-3.5" />
+                                    {u.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <Badge variant="outline" className="border-border text-foreground">
+                              FUNCIONÁRIO
+                            </Badge>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {isDono && (
+                              <Select
+                                value={u.role}
+                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
+                                disabled={updateRole.isPending || !canManageRole}
+                              >
+                                <SelectTrigger className="w-full bg-input border-border">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">
+                                    <div className="flex items-center gap-2">
+                                      <Crown className="w-4 h-4" />
+                                      Gestor
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="funcionario">
+                                    <div className="flex items-center gap-2">
+                                      <UserCheck className="w-4 h-4" />
+                                      Funcionário
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+
+                            <Select
+                              value={u.sector || 'none'}
+                              onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : (value as 'bar' | 'cozinha'), u.full_name, u.sector)}
+                              disabled={updateSector.isPending || isSelf}
+                            >
+                              <SelectTrigger className="w-full bg-input border-border">
+                                <SelectValue placeholder="Setor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="bar">
+                                  <div className="flex items-center gap-2">
+                                    <Wine className="w-4 h-4 text-primary" />
+                                    Bar
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="cozinha">
+                                  <div className="flex items-center gap-2">
+                                    <UtensilsCrossed className="w-4 h-4 text-success" />
+                                    Cozinha
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="none">Sem setor</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="mt-5 flex items-center justify-center gap-3 flex-nowrap">
+                            {isDono && (
+                              <EditAvatarDialog userId={u.id} userName={u.full_name} currentAvatarUrl={u.avatar_url} />
+                            )}
+                            {isDono && (
+                              <EditEmployeeDialog user={{ id: u.id, full_name: u.full_name, phone: u.phone, sector: u.sector }} />
+                            )}
+                            {isDono && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={!canDelete}
+                                    className="h-9 w-9 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir <strong>{u.full_name}</strong>? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                      disabled={!canDelete}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </div>
           )}
-        </div>
+        </main>
       </div>
     </MainLayout>
   );

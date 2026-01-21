@@ -120,7 +120,7 @@ export function CreateEmployeeDialog() {
       if (!isOpen) resetForm();
     }}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:opacity-90">
+        <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
           <UserPlus className="w-4 h-4 mr-2" />
           Novo Funcionário
         </Button>
@@ -199,13 +199,13 @@ export function CreateEmployeeDialog() {
                 <SelectContent>
                   <SelectItem value="bar">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span className="w-2 h-2 rounded-full bg-primary" />
                       Bar
                     </div>
                   </SelectItem>
                   <SelectItem value="cozinha">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="w-2 h-2 rounded-full bg-success" />
                       Cozinha
                     </div>
                   </SelectItem>
@@ -229,7 +229,7 @@ export function CreateEmployeeDialog() {
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 hover:opacity-90"
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {loading ? 'Criando...' : 'Criar Funcionário'}
             </Button>
