@@ -262,89 +262,86 @@ export default function Usuarios() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Avatar edit */}
-                  {isDono && (
-                    <EditAvatarDialog
-                      userId={u.id}
-                      userName={u.full_name}
-                      currentAvatarUrl={u.avatar_url || null}
-                    />
-                  )}
-
-                  {/* Edit user info (Dono only) */}
-                  {isDono && (
-                    <EditUserDialog
-                      userId={u.id}
-                      userName={u.full_name}
-                      userPhone={u.phone}
-                      userSector={u.sector}
-                    />
-                  )}
-
-                  {/* Role Badge */}
-                  <Badge className={
-                    u.role === 'dono' ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' :
-                    u.role === 'admin' ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' :
-                    'bg-blue-500/20 text-blue-500 border-blue-500/50'
-                  }>
-                    {u.role === 'dono' && <Star className="w-3 h-3 mr-1" />}
-                    {u.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
-                    {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
-                  </Badge>
-
-                  {/* Sector Badge */}
-                  {u.role === 'funcionario' && u.sector && (
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      {getSectorIcon(u.sector)}
-                      {u.sector === 'bar' ? 'Bar' : 'Cozinha'}
+                <div className="w-full sm:w-auto flex flex-col gap-2">
+                  {/* Badges / selects (podem quebrar linha) */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Role Badge */}
+                    <Badge className={
+                      u.role === 'dono' ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' :
+                      u.role === 'admin' ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' :
+                      'bg-blue-500/20 text-blue-500 border-blue-500/50'
+                    }>
+                      {u.role === 'dono' && <Star className="w-3 h-3 mr-1" />}
+                      {u.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
+                      {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
                     </Badge>
-                  )}
 
-                  {/* Sector Select for funcionarios */}
-                  {isDono && u.role === 'funcionario' && (
-                    <Select
-                      value={u.sector || 'todos'}
-                      onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos</SelectItem>
-                        <SelectItem value="bar">Bar</SelectItem>
-                        <SelectItem value="cozinha">Cozinha</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+                    {/* Sector Badge */}
+                    {u.role === 'funcionario' && u.sector && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        {getSectorIcon(u.sector)}
+                        {u.sector === 'bar' ? 'Bar' : 'Cozinha'}
+                      </Badge>
+                    )}
 
-                  {/* Role Select for dono */}
+                    {/* Sector Select for funcionarios */}
+                    {isDono && u.role === 'funcionario' && (
+                      <Select
+                        value={u.sector || 'todos'}
+                        onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="bar">Bar</SelectItem>
+                          <SelectItem value="cozinha">Cozinha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {/* Role Select for dono */}
+                    {isDono && (
+                      <Select
+                        value={u.role}
+                        onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="funcionario">Funcionário</SelectItem>
+                          <SelectItem value="admin">Gestor</SelectItem>
+                          <SelectItem value="dono">Dono</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Ações (NÃO quebram) */}
                   {isDono && (
-                    <Select
-                      value={u.role}
-                      onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="funcionario">Funcionário</SelectItem>
-                        <SelectItem value="admin">Gestor</SelectItem>
-                        <SelectItem value="dono">Dono</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  {/* Delete Button */}
-                  {isDono && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteUser(u.id, u.full_name)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-2 justify-end flex-nowrap">
+                      <EditAvatarDialog
+                        userId={u.id}
+                        userName={u.full_name}
+                        currentAvatarUrl={u.avatar_url || null}
+                      />
+                      <EditUserDialog
+                        userId={u.id}
+                        userName={u.full_name}
+                        userPhone={u.phone}
+                        userSector={u.sector}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteUser(u.id, u.full_name)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
