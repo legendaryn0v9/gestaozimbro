@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, UserCheck, Crown, Trash2, Phone, Star } from 'lucide-react';
+import { Users, Crown, Trash2, Phone, Star } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
@@ -164,9 +164,7 @@ export default function Usuarios() {
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-display text-lg leading-none">{u.full_name}</p>
-                                  {isSelf && (
-                                    <Badge variant="outline" className="border-primary text-primary">Você</Badge>
-                                  )}
+                                  {/* remove marcador de usuário logado */}
                                 </div>
                                 {u.phone && (
                                   <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
@@ -251,9 +249,7 @@ export default function Usuarios() {
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-display text-lg leading-none">{u.full_name}</p>
-                                  {isSelf && (
-                                    <Badge variant="outline" className="border-primary text-primary">Você</Badge>
-                                  )}
+                                  {/* remove marcador de usuário logado */}
                                 </div>
                                 {u.phone && (
                                   <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
@@ -291,13 +287,7 @@ export default function Usuarios() {
                                </Select>
                              )}
 
-                             {isDono && isSelf && (
-                               <div className="w-full flex justify-center sm:justify-start">
-                                 <Badge variant="roleManager" className="px-3">
-                                   Seu cargo: Gestor
-                                 </Badge>
-                               </div>
-                             )}
+                            {/* remove "Seu cargo: ..." */}
 
                             <div className="flex items-center justify-center gap-3 sm:justify-end sm:col-span-1">
                               {isDono && (
@@ -364,9 +354,7 @@ export default function Usuarios() {
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-display text-lg leading-none">{u.full_name}</p>
-                                  {isSelf && (
-                                    <Badge variant="outline" className="border-primary text-primary">Você</Badge>
-                                  )}
+                                  {/* remove marcador de usuário logado */}
                                 </div>
                                 {u.phone && (
                                   <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
@@ -377,7 +365,7 @@ export default function Usuarios() {
                               </div>
                             </div>
 
-                            <Badge variant="roleEmployee" className="px-3">
+                            <Badge variant="roleEmployee" className="px-3 whitespace-nowrap min-w-[9.5rem] justify-center">
                               FUNCIONÁRIO
                             </Badge>
                           </div>

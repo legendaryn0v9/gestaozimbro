@@ -286,9 +286,7 @@ export default function Usuarios() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold truncate">{u.full_name}</p>
-                            {isSelf(u.id) && (
-                              <Badge variant="outline" className="text-xs">Você</Badge>
-                            )}
+                            {/* remove marcador de usuário logado */}
                           </div>
                           <p className="text-sm text-muted-foreground truncate">{u.phone || u.email}</p>
                         </div>
@@ -307,13 +305,6 @@ export default function Usuarios() {
                             {u.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
                             {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
                           </Badge>
-
-                          {/* Sector Badge (texto apenas) */}
-                          {(u.role === 'funcionario' || u.role === 'admin') && u.sector && (
-                            <Badge variant="outline">
-                              {u.sector === 'bar' ? 'Bar' : 'Cozinha'}
-                            </Badge>
-                          )}
 
                           {/* Sector Select (funcionário/gestor) */}
                           {isDono && (u.role === 'funcionario' || u.role === 'admin') && (
@@ -345,20 +336,7 @@ export default function Usuarios() {
                             </Select>
                           )}
 
-                          {/* Cargo do próprio usuário / Dono (evita Select em branco) */}
-                          {isDono && !canEditRoleOf(u) && (
-                            <div className="w-32 flex justify-center">
-                              <Badge variant="outline" className="w-full justify-center">
-                                {isSelf(u.id)
-                                  ? `Seu cargo: ${u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}`
-                                  : u.role === 'dono'
-                                    ? 'Dono'
-                                    : u.role === 'admin'
-                                      ? 'Gestor'
-                                      : 'Funcionário'}
-                              </Badge>
-                            </div>
-                          )}
+                          {/* remove "Seu cargo: ..." e evita modal em branco */}
                         </div>
 
                         {/* Ações (NÃO quebram) */}
