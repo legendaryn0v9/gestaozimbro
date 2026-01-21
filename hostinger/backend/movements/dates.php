@@ -7,14 +7,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit();
 }
 
-requireAuth();
+$authUser = requireAuth();
 
 $database = new Database();
 $db = $database->getConnection();
 
 try {
+    // Check if user is admin/dono or funcionario
+    $userRole = $authUser['role'] ?? 'funcionario';
+    $isAdmin = in_array($userRole, ['admin', 'dono']);
+    
     // Buscar datas únicas de movimentações
-    $stmt = $db->query("SELECT DISTINCT DATE(created_at) as date FROM stock_movements ORDER BY date DESC");
+    // Funcionarios only see dates where THEY had movements
+    if ($isAdmin) {
+        $stmt = $db->query("SELECT DISTINCT DATE(created_at) as date FROM stock_movements ORDER BY date DESC");
+    } else {
+        $stmt = $db->prepare("SELECT DISTINCT DATE(created_at) as date FROM stock_movements WHERE user_id = ? ORDER BY date DESC");
+        $stmt->execute([$authUser['user_id']]);
+    }
+    
     $dates = $stmt->fetchAll(PDO::FETCH_COLUMN);
     
     echo json_encode($dates);
