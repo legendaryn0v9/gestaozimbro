@@ -65,6 +65,10 @@ copy /Y "hostinger\frontend\src\lib\api.ts" "src\lib\api.ts" >nul
 if errorlevel 1 (echo ERRO ao copiar api.ts & pause & exit /b 1)
 echo   api.ts copiado
 
+copy /Y "hostinger\frontend\src\lib\datetime.ts" "src\lib\datetime.ts" >nul
+if errorlevel 1 (echo ERRO ao copiar datetime.ts & pause & exit /b 1)
+echo   datetime.ts copiado
+
 copy /Y "hostinger\frontend\src\lib\auth.tsx" "src\lib\auth.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar auth.tsx & pause & exit /b 1)
 echo   auth.tsx copiado

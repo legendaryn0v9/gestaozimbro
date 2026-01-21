@@ -13,6 +13,7 @@ import { ClipboardList, Calendar as CalendarIcon, Download, ChevronLeft, Chevron
 import { format, subDays, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { formatBrazilTime } from '@/lib/datetime';
 
 export default function Relatorios() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -115,7 +116,7 @@ export default function Relatorios() {
       
       if (isAdmin) {
         lines.push([
-          format(new Date(m.created_at), "HH:mm"),
+          formatBrazilTime(m.created_at, 'time'),
           tipo,
           `"${m.inventory_items?.name || ''}"`,
           `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
@@ -125,7 +126,7 @@ export default function Relatorios() {
         ].join(','));
       } else {
         lines.push([
-          format(new Date(m.created_at), "HH:mm"),
+          formatBrazilTime(m.created_at, 'time'),
           tipo,
           `"${m.inventory_items?.name || ''}"`,
           `${sign}${m.quantity} ${m.inventory_items?.unit || ''}`,
@@ -136,7 +137,7 @@ export default function Relatorios() {
     });
 
     lines.push('');
-    lines.push(`Relatório gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`);
+    lines.push(`Relatório gerado em: ${formatBrazilTime(new Date().toISOString(), 'dateTime')}`);
 
     const csvContent = lines.join('\n');
 
@@ -408,7 +409,7 @@ export default function Relatorios() {
                             </div>
                           </div>
                           <div className="text-right text-sm text-muted-foreground">
-                            <p>{format(new Date(edit.created_at), 'HH:mm')}</p>
+                            <p>{formatBrazilTime(edit.created_at, 'time')}</p>
                             <p>{edit.user_name || 'Usuário'}</p>
                           </div>
                         </div>
