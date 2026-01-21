@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'PATC
     exit();
 }
 
-requireDono(); // Apenas dono pode alterar cargos
+$authUser = requireDono(); // Apenas dono pode alterar cargos
 
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -23,6 +23,21 @@ if (!in_array($data['role'], ['dono', 'admin', 'funcionario'])) {
     exit();
 }
 
+// Regras adicionais de segurança/negócio:
+// - Dono não pode trocar o próprio cargo
+// - Dono não pode atribuir cargo de Dono a ninguém
+if (!empty($authUser['user_id']) && $data['user_id'] === $authUser['user_id']) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Você não pode alterar o seu próprio cargo']);
+    exit();
+}
+
+if ($data['role'] === 'dono') {
+    http_response_code(403);
+    echo json_encode(['error' => 'Não é permitido atribuir o cargo de Dono']);
+    exit();
+}
+
 $database = new Database();
 $db = $database->getConnection();
 
@@ -33,6 +48,16 @@ try {
     if (!$stmt->fetch()) {
         http_response_code(404);
         echo json_encode(['error' => 'Usuário não encontrado']);
+        exit();
+    }
+
+    // Não permitir alterar cargo de um usuário que já seja Dono
+    $stmt = $db->prepare("SELECT role FROM user_roles WHERE user_id = ? LIMIT 1");
+    $stmt->execute([$data['user_id']]);
+    $currentRoleRow = $stmt->fetch();
+    if ($currentRoleRow && isset($currentRoleRow['role']) && $currentRoleRow['role'] === 'dono') {
+        http_response_code(403);
+        echo json_encode(['error' => 'Não é permitido alterar o cargo do Dono']);
         exit();
     }
     
