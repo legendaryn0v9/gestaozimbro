@@ -152,9 +152,13 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
 
   const getFinalQuantity = () => {
     if (!selectedItem || !quantity) return null;
-    const qtyValue = Number(quantity);
-    const current = selectedItem.quantity;
-    const final = type === 'entrada' ? current + qtyValue : current - qtyValue;
+    const qtyValue = Number(String(quantity).replace(',', '.'));
+    if (!Number.isFinite(qtyValue) || qtyValue <= 0) return null;
+
+    // Backend PHP may return numbers as strings; always coerce to number to avoid crashes.
+    const current = Number(selectedItem.quantity);
+    const currentQty = Number.isFinite(current) ? current : 0;
+    const final = type === 'entrada' ? currentQty + qtyValue : currentQty - qtyValue;
     return { qtyValue, final };
   };
 
@@ -377,7 +381,7 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
 
               <Button
                 type="submit"
-                disabled={addMovement.isPending || !quantity || (calc && calc.final < 0 && !isEntrada)}
+                disabled={addMovement.isPending || !calc || (calc && calc.final < 0 && !isEntrada)}
                 className={cn(
                   'w-full h-11 text-white',
                   isEntrada 
