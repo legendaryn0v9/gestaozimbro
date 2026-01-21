@@ -81,10 +81,13 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
 
   // Keep dialog consistent when switching sector
   useEffect(() => {
-    if (!open) return;
+    // Only relevant when the user can actually switch sector in this dialog.
+    // IMPORTANT: don't clear selection in direct-item mode (preselectedItemId),
+    // otherwise the dialog will never resolve the preselected product.
+    if (!open || !canChooseSector || preselectedItemId) return;
     setSelectedItem(null);
     setQuantity('');
-  }, [adminSector, open]);
+  }, [adminSector, open, canChooseSector, preselectedItemId]);
 
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
@@ -197,7 +200,9 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
 
   const isEntrada = type === 'entrada';
   const calc = getFinalQuantity();
-  const isDirectMode = Boolean(preselectedItemId && selectedItem);
+  // Consider direct mode as soon as we have an id, even if the item data
+  // hasn't loaded yet, so we don't flash the selection list.
+  const isDirectMode = Boolean(preselectedItemId);
 
   const renderItemCard = (item: InventoryItem) => {
     const isSelected = selectedItem?.id === item.id;
@@ -354,6 +359,13 @@ export function MovementDialog({ open, onOpenChange, type, preselectedItemId, se
                 </div>
               </div>
             </>
+          )}
+
+          {/* Direct mode loading state (while items load and we resolve the preselected item) */}
+          {isDirectMode && !selectedItem && (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-sm text-muted-foreground">Carregando produto...</div>
+            </div>
           )}
 
           {selectedItem && (

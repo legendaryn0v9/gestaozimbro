@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, UserCheck, Crown, Trash2, UtensilsCrossed, Phone, Star } from 'lucide-react';
+import { Users, UserCheck, Crown, Trash2, Phone, Star } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
@@ -399,15 +399,10 @@ export default function Usuarios() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="bar">
-                                  <div className="flex items-center gap-2">
-                                    Bar
-                                  </div>
+                                  Bar
                                 </SelectItem>
                                 <SelectItem value="cozinha">
-                                  <div className="flex items-center gap-2">
-                                    <UtensilsCrossed className="w-4 h-4 text-success" />
-                                    Cozinha
-                                  </div>
+                                  Cozinha
                                 </SelectItem>
                                 <SelectItem value="none">Sem setor</SelectItem>
                               </SelectContent>

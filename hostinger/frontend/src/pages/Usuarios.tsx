@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
-import { Users, Trash2, Crown, Star, Wine, UtensilsCrossed, Loader2, Plus } from 'lucide-react';
+import { Users, Trash2, Crown, Star, Loader2, Plus } from 'lucide-react';
 import { users } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -116,12 +116,6 @@ export default function Usuarios() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getSectorIcon = (sector: string | null) => {
-    if (sector === 'bar') return <Wine className="w-4 h-4" />;
-    if (sector === 'cozinha') return <UtensilsCrossed className="w-4 h-4" />;
-    return null;
   };
 
   // Show all users EXCEPT the admin that formats data (the hidden super admin)
@@ -314,16 +308,15 @@ export default function Usuarios() {
                             {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
                           </Badge>
 
-                          {/* Sector Badge */}
-                          {u.role === 'funcionario' && u.sector && (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              {getSectorIcon(u.sector)}
+                          {/* Sector Badge (texto apenas) */}
+                          {(u.role === 'funcionario' || u.role === 'admin') && u.sector && (
+                            <Badge variant="outline">
                               {u.sector === 'bar' ? 'Bar' : 'Cozinha'}
                             </Badge>
                           )}
 
-                          {/* Sector Select for funcionarios */}
-                          {isDono && u.role === 'funcionario' && (
+                          {/* Sector Select (funcionário/gestor) */}
+                          {isDono && (u.role === 'funcionario' || u.role === 'admin') && (
                             <Select
                               value={u.sector || 'todos'}
                               onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
@@ -339,13 +332,9 @@ export default function Usuarios() {
                             </Select>
                           )}
 
-                          {/* Role Select for dono (sem opção Dono) */}
-                          {isDono && (
-                            <Select
-                              value={u.role}
-                              onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}
-                              disabled={!canEditRoleOf(u)}
-                            >
+                          {/* Role Select (somente quando pode editar) */}
+                          {isDono && canEditRoleOf(u) && (
+                            <Select value={u.role} onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}>
                               <SelectTrigger className="w-32">
                                 <SelectValue />
                               </SelectTrigger>
@@ -354,6 +343,21 @@ export default function Usuarios() {
                                 <SelectItem value="admin">Gestor</SelectItem>
                               </SelectContent>
                             </Select>
+                          )}
+
+                          {/* Cargo do próprio usuário / Dono (evita Select em branco) */}
+                          {isDono && !canEditRoleOf(u) && (
+                            <div className="w-32 flex justify-center">
+                              <Badge variant="outline" className="w-full justify-center">
+                                {isSelf(u.id)
+                                  ? `Seu cargo: ${u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}`
+                                  : u.role === 'dono'
+                                    ? 'Dono'
+                                    : u.role === 'admin'
+                                      ? 'Gestor'
+                                      : 'Funcionário'}
+                              </Badge>
+                            </div>
                           )}
                         </div>
 
