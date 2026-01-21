@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit();
 }
 
-requireAuth();
+$authUser = requireAuth();
 
 $database = new Database();
 $db = $database->getConnection();
@@ -18,11 +18,17 @@ try {
     $date = $_GET['date'] ?? null;
     $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
     
+    // Check if user is admin/dono or funcionario
+    $userRole = $authUser['role'] ?? 'funcionario';
+    $isAdmin = in_array($userRole, ['admin', 'dono']);
+    
     $sql = "
-        SELECT sm.*, i.name as item_name, i.sector, i.unit, i.price, u.full_name as user_name
+        SELECT sm.*, i.name as item_name, i.sector, i.unit, i.price, u.full_name as user_name,
+               ur.role as user_role
         FROM stock_movements sm
         LEFT JOIN inventory_items i ON sm.item_id = i.id
         JOIN users u ON sm.user_id = u.id
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
     ";
     
     $conditions = [];
@@ -41,6 +47,13 @@ try {
     if ($date) {
         $conditions[] = "DATE(sm.created_at) = ?";
         $params[] = $date;
+    }
+    
+    // IMPORTANT: Funcionarios only see their own movements
+    // Admins and Donos see all movements
+    if (!$isAdmin) {
+        $conditions[] = "sm.user_id = ?";
+        $params[] = $authUser['user_id'];
     }
     
     if (!empty($conditions)) {
@@ -67,6 +80,7 @@ try {
             'created_at' => $m['created_at'],
             'item_name' => $m['item_name'] ?? $m['item_name_snapshot'] ?? 'Item excluído',
             'user_name' => $m['user_name'],
+            'user_role' => $m['user_role'] ?? 'funcionario',
             'sector' => $m['sector'] ?? $m['item_sector'],
             'inventory_items' => [
                 'name' => $m['item_name'] ?? $m['item_name_snapshot'] ?? 'Item excluído',
