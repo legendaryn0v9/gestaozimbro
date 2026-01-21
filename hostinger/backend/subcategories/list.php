@@ -17,7 +17,9 @@ try {
     $categoryId = $_GET['category_id'] ?? null;
 
     if ($categoryId) {
-        $stmt = $db->prepare("SELECT * FROM subcategories WHERE category_id = ? ORDER BY sort_order, name");
+        // NOTE: some installations use an older schema without sort_order.
+        // Keep ordering compatible by sorting by name only.
+        $stmt = $db->prepare("SELECT * FROM subcategories WHERE category_id = ? ORDER BY name");
         $stmt->execute([$categoryId]);
         $rows = $stmt->fetchAll();
         echo json_encode($rows);
@@ -31,7 +33,7 @@ try {
             FROM subcategories s
             INNER JOIN categories c ON c.id = s.category_id
             WHERE c.sector = ?
-            ORDER BY c.name, s.sort_order, s.name
+            ORDER BY c.name, s.name
         ");
         $stmt->execute([$sector]);
         $rows = $stmt->fetchAll();
@@ -39,10 +41,10 @@ try {
         exit();
     }
 
-    $stmt = $db->query("SELECT * FROM subcategories ORDER BY category_id, sort_order, name");
+    $stmt = $db->query("SELECT * FROM subcategories ORDER BY category_id, name");
     $rows = $stmt->fetchAll();
     echo json_encode($rows);
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Erro ao buscar subcategorias: ' . $e->getMessage()]);
 }
