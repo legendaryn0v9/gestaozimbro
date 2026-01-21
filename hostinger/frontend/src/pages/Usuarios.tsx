@@ -127,6 +127,29 @@ export default function Usuarios() {
   // Show all users EXCEPT the admin that formats data (the hidden super admin)
   const filteredUsers = allUsers.filter(u => u.full_name?.toLowerCase() !== 'admin');
 
+  const currentUserId = user?.id;
+  const isSelf = (id: string) => !!currentUserId && id === currentUserId;
+
+  const canEditRoleOf = (targetUser: (typeof filteredUsers)[number]) => {
+    // Dono não pode trocar o próprio cargo e não pode mexer em qualquer usuário que já seja Dono.
+    // (Backend também valida.)
+    if (!isDono) return false;
+    if (isSelf(targetUser.id)) return false;
+    if (targetUser.role === 'dono') return false;
+    return true;
+  };
+
+  // Organiza visualmente por cargo
+  const donoUsers = filteredUsers.filter(u => u.role === 'dono');
+  const adminUsers = filteredUsers.filter(u => u.role === 'admin');
+  const funcionarioUsers = filteredUsers.filter(u => u.role === 'funcionario');
+
+  const sections: Array<{ key: string; title: string; items: typeof filteredUsers }> = [
+    { key: 'dono', title: 'Dono', items: donoUsers },
+    { key: 'gestores', title: 'Gestores', items: adminUsers },
+    { key: 'funcionarios', title: 'Funcionários', items: funcionarioUsers },
+  ].filter(s => s.items.length > 0);
+
   if (!isAdmin) return null;
 
   return (
@@ -242,109 +265,130 @@ export default function Usuarios() {
             <p className="text-muted-foreground">Clique em "Novo Funcionário" para adicionar</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredUsers.map((u) => (
-              <div key={u.id} className="glass rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex items-center gap-3 flex-1">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={u.avatar_url || undefined} />
-                    <AvatarFallback className={
-                      u.role === 'dono' ? 'bg-purple-500/20 text-purple-500' :
-                      u.role === 'admin' ? 'bg-amber-500/20 text-amber-500' :
-                      'bg-blue-500/20 text-blue-500'
-                    }>
-                      {getInitials(u.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{u.full_name}</p>
-                    <p className="text-sm text-muted-foreground truncate">{u.phone || u.email}</p>
-                  </div>
+          <div className="space-y-6">
+            {sections.map((section) => (
+              <section key={section.key} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                    {section.title}
+                  </h2>
+                  <span className="text-xs text-muted-foreground">{section.items.length}</span>
                 </div>
 
-                <div className="w-full sm:w-auto flex flex-col gap-2">
-                  {/* Badges / selects (podem quebrar linha) */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Role Badge */}
-                    <Badge className={
-                      u.role === 'dono' ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' :
-                      u.role === 'admin' ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' :
-                      'bg-blue-500/20 text-blue-500 border-blue-500/50'
-                    }>
-                      {u.role === 'dono' && <Star className="w-3 h-3 mr-1" />}
-                      {u.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
-                      {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
-                    </Badge>
+                <div className="space-y-4">
+                  {section.items.map((u) => (
+                    <div key={u.id} className="glass rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={u.avatar_url || undefined} />
+                          <AvatarFallback className={
+                            u.role === 'dono' ? 'bg-purple-500/20 text-purple-500' :
+                            u.role === 'admin' ? 'bg-amber-500/20 text-amber-500' :
+                            'bg-blue-500/20 text-blue-500'
+                          }>
+                            {getInitials(u.full_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold truncate">{u.full_name}</p>
+                            {isSelf(u.id) && (
+                              <Badge variant="outline" className="text-xs">Você</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{u.phone || u.email}</p>
+                        </div>
+                      </div>
 
-                    {/* Sector Badge */}
-                    {u.role === 'funcionario' && u.sector && (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        {getSectorIcon(u.sector)}
-                        {u.sector === 'bar' ? 'Bar' : 'Cozinha'}
-                      </Badge>
-                    )}
+                      <div className="w-full sm:w-auto flex flex-col gap-2">
+                        {/* Badges / selects (podem quebrar linha) */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Role Badge */}
+                          <Badge className={
+                            u.role === 'dono' ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' :
+                            u.role === 'admin' ? 'bg-amber-500/20 text-amber-500 border-amber-500/50' :
+                            'bg-blue-500/20 text-blue-500 border-blue-500/50'
+                          }>
+                            {u.role === 'dono' && <Star className="w-3 h-3 mr-1" />}
+                            {u.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
+                            {u.role === 'dono' ? 'Dono' : u.role === 'admin' ? 'Gestor' : 'Funcionário'}
+                          </Badge>
 
-                    {/* Sector Select for funcionarios */}
-                    {isDono && u.role === 'funcionario' && (
-                      <Select
-                        value={u.sector || 'todos'}
-                        onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos</SelectItem>
-                          <SelectItem value="bar">Bar</SelectItem>
-                          <SelectItem value="cozinha">Cozinha</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                          {/* Sector Badge */}
+                          {u.role === 'funcionario' && u.sector && (
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              {getSectorIcon(u.sector)}
+                              {u.sector === 'bar' ? 'Bar' : 'Cozinha'}
+                            </Badge>
+                          )}
 
-                    {/* Role Select for dono */}
-                    {isDono && (
-                      <Select
-                        value={u.role}
-                        onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="funcionario">Funcionário</SelectItem>
-                          <SelectItem value="admin">Gestor</SelectItem>
-                          <SelectItem value="dono">Dono</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
+                          {/* Sector Select for funcionarios */}
+                          {isDono && u.role === 'funcionario' && (
+                            <Select
+                              value={u.sector || 'todos'}
+                              onValueChange={(v) => handleSectorChange(u.id, v, u.full_name, u.sector)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="todos">Todos</SelectItem>
+                                <SelectItem value="bar">Bar</SelectItem>
+                                <SelectItem value="cozinha">Cozinha</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
 
-                  {/* Ações (NÃO quebram) */}
-                  {isDono && (
-                    <div className="flex items-center gap-2 justify-end flex-nowrap">
-                      <EditAvatarDialog
-                        userId={u.id}
-                        userName={u.full_name}
-                        currentAvatarUrl={u.avatar_url || null}
-                      />
-                      <EditUserDialog
-                        userId={u.id}
-                        userName={u.full_name}
-                        userPhone={u.phone}
-                        userSector={u.sector}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteUser(u.id, u.full_name)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                          {/* Role Select for dono (sem opção Dono) */}
+                          {isDono && (
+                            <Select
+                              value={u.role}
+                              onValueChange={(v) => handleRoleChange(u.id, v, u.full_name, u.role)}
+                              disabled={!canEditRoleOf(u)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="funcionario">Funcionário</SelectItem>
+                                <SelectItem value="admin">Gestor</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+
+                        {/* Ações (NÃO quebram) */}
+                        {isDono && (
+                          <div className="flex items-center gap-2 justify-end flex-nowrap">
+                            <EditAvatarDialog
+                              userId={u.id}
+                              userName={u.full_name}
+                              currentAvatarUrl={u.avatar_url || null}
+                            />
+                            <EditUserDialog
+                              userId={u.id}
+                              userName={u.full_name}
+                              userPhone={u.phone}
+                              userSector={u.sector}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteUser(u.id, u.full_name)}
+                              disabled={isSelf(u.id) || u.role === 'dono'}
+                              aria-disabled={isSelf(u.id) || u.role === 'dono'}
+                              title={isSelf(u.id) ? 'Você não pode excluir seu próprio usuário.' : u.role === 'dono' ? 'O Dono não pode ser excluído.' : 'Excluir'}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </div>
+              </section>
             ))}
           </div>
         )}
