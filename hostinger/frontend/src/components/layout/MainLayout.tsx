@@ -13,7 +13,12 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div className="hidden lg:block">
         <Sidebar />
       </div>
-      <main className="pt-14 lg:pt-0 lg:ml-64 p-4 lg:p-8">
+      {/*
+        pt-14 compensates the fixed MobileHeader height.
+        On desktop we still need top padding; previously lg:pt-0 was overriding p-8 and
+        causing content to stick to the top.
+      */}
+      <main className="pt-16 lg:pt-8 lg:ml-64 p-4 lg:p-8">
         {children}
       </main>
     </div>
