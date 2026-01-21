@@ -211,6 +211,10 @@ copy /Y "hostinger\frontend\src\components\users\BrandingManager.tsx" "src\compo
 if errorlevel 1 (echo ERRO ao copiar BrandingManager.tsx & pause & exit /b 1)
 echo   BrandingManager.tsx copiado
 
+copy /Y "hostinger\frontend\src\components\users\EditUserDialog.tsx" "src\components\users\EditUserDialog.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar EditUserDialog.tsx & pause & exit /b 1)
+echo   EditUserDialog.tsx copiado
+
 echo.
 echo Todos os arquivos copiados com sucesso!
 echo.

@@ -34,6 +34,9 @@ export function MobileHeader() {
           ) : (
             <h1 className="font-display font-bold text-sidebar-foreground">Zimbro</h1>
           )}
+          <span className="text-sm font-medium text-sidebar-foreground/80 truncate max-w-[180px]">
+            {branding?.system_name || 'Sistema Zimbro'}
+          </span>
         </div>
       </div>
     </header>

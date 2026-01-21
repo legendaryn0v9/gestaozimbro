@@ -1,9 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Upload, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useBranding, useUploadLogo } from '@/hooks/useBranding';
+import { useBranding, useUpdateSystemName, useUploadLogo } from '@/hooks/useBranding';
 
 function LogoCard({
   title,
@@ -98,6 +100,39 @@ function LogoCard({
 
 export function BrandingManager() {
   const { data } = useBranding();
+  const updateSystemName = useUpdateSystemName();
+  const { toast } = useToast();
+  const [systemName, setSystemName] = useState('');
+
+  useEffect(() => {
+    setSystemName((data as any)?.system_name || 'Sistema Zimbro');
+  }, [data]);
+
+  const handleSaveSystemName = async () => {
+    const trimmed = systemName.trim();
+    if (!trimmed) {
+      toast({
+        title: 'Nome inválido',
+        description: 'O nome não pode ficar vazio.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updateSystemName.mutateAsync({ systemName: trimmed });
+      toast({
+        title: 'Nome atualizado!',
+        description: 'Todos os usuários verão em alguns segundos.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao salvar nome',
+        description: err?.message || 'Tente novamente',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -105,6 +140,30 @@ export function BrandingManager() {
         <h2 className="text-lg font-display font-semibold">Personalização</h2>
         <p className="text-sm text-muted-foreground">Altere as logos do sistema (apenas Dono).</p>
       </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row md:items-end gap-3">
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="systemName">Nome do sistema</Label>
+            <Input
+              id="systemName"
+              value={systemName}
+              onChange={(e) => setSystemName(e.target.value)}
+              placeholder="Ex: Sistema Zimbro"
+              maxLength={60}
+            />
+            <p className="text-xs text-muted-foreground">Aparece abaixo das logos no login e no dashboard.</p>
+          </div>
+          <Button
+            onClick={handleSaveSystemName}
+            disabled={updateSystemName.isPending}
+            className="md:self-end"
+          >
+            Salvar
+          </Button>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <LogoCard
           title="Logo do Dashboard"

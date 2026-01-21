@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'PUT' && $_SERVER['REQUEST_METHOD'] !== 'PATC
     exit();
 }
 
-requireAdmin();
+requireDono(); // Apenas dono pode alterar cargos
 
 $data = json_decode(file_get_contents('php://input'), true);
 
