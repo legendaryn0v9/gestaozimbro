@@ -60,6 +60,7 @@ if not exist "hostinger\frontend\src\lib\api.ts" (
     exit /b 1
 )
 
+echo Copiando biblioteca de API...
 copy /Y "hostinger\frontend\src\lib\api.ts" "src\lib\api.ts" >nul
 if errorlevel 1 (echo ERRO ao copiar api.ts & pause & exit /b 1)
 echo   api.ts copiado
@@ -68,6 +69,7 @@ copy /Y "hostinger\frontend\src\lib\auth.tsx" "src\lib\auth.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar auth.tsx & pause & exit /b 1)
 echo   auth.tsx copiado
 
+echo Copiando hooks adaptados...
 copy /Y "hostinger\frontend\src\hooks\useInventory.ts" "src\hooks\useInventory.ts" >nul
 if errorlevel 1 (echo ERRO ao copiar useInventory.ts & pause & exit /b 1)
 echo   useInventory.ts copiado
@@ -96,6 +98,11 @@ copy /Y "hostinger\frontend\src\hooks\use-toast.ts" "src\hooks\use-toast.ts" >nu
 if errorlevel 1 (echo ERRO ao copiar use-toast.ts & pause & exit /b 1)
 echo   use-toast.ts copiado
 
+copy /Y "hostinger\frontend\src\hooks\useRealtimeInventory.ts" "src\hooks\useRealtimeInventory.ts" >nul
+if errorlevel 1 (echo ERRO ao copiar useRealtimeInventory.ts & pause & exit /b 1)
+echo   useRealtimeInventory.ts copiado
+
+echo Copiando paginas adaptadas...
 copy /Y "hostinger\frontend\src\pages\Auth.tsx" "src\pages\Auth.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar Auth.tsx & pause & exit /b 1)
 echo   Auth.tsx copiado
