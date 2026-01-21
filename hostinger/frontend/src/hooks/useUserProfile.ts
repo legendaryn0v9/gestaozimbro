@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../lib/auth';
-import { users, User } from '../lib/api';
+import { users, uploads, User } from '../lib/api';
 import { useToast } from './use-toast';
 
 export interface UserProfile {
@@ -90,30 +90,7 @@ export function useUpdateProfileAvatar() {
 // Real file upload would need a PHP backend endpoint for file storage.
 // For now, it returns a placeholder or uses an external image URL.
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
-  // In a real implementation, you would:
-  // 1. Create a PHP endpoint to handle file uploads
-  // 2. Send the file via FormData
-  // 3. Store the file on the server and return the URL
-  
-  // For now, we'll convert to base64 data URL for small images
-  // or throw an error if the file is too large
-  
-  const maxSizeMB = 1;
-  const maxSizeBytes = maxSizeMB * 1024 * 1024;
-  
-  if (file.size > maxSizeBytes) {
-    throw new Error(`O arquivo é muito grande. Máximo permitido: ${maxSizeMB}MB`);
-  }
-  
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // Return base64 data URL
-      resolve(reader.result as string);
-    };
-    reader.onerror = () => {
-      reject(new Error('Erro ao processar a imagem'));
-    };
-    reader.readAsDataURL(file);
-  });
+  const res = await uploads.uploadAvatar(userId, file);
+  if (res.error) throw new Error(res.error);
+  return res.data?.url || '';
 }

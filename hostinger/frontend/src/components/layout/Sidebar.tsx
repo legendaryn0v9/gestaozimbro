@@ -18,6 +18,7 @@ import { useUserSector } from '../../hooks/useUserSector';
 import { cn } from '../../lib/utils';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { useBranding } from '@/hooks/useBranding';
 
 const baseMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/', sector: null },
@@ -42,6 +43,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const { isAdmin } = useIsAdmin();
   const { isDono } = useIsDono();
   const { sector } = useUserSector();
+  const { data: branding } = useBranding();
 
   const handleClick = () => {
     onNavigate?.();
@@ -65,7 +67,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     <aside className="h-full lg:fixed lg:left-0 lg:top-0 lg:h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-6 border-b border-sidebar-border hidden lg:block">
         <div className="flex items-center justify-center">
-          <h1 className="font-display font-bold text-2xl text-sidebar-foreground">Zimbro</h1>
+          {branding?.dashboard_logo_url ? (
+            <img
+              src={branding.dashboard_logo_url}
+              alt="Logo"
+              className="w-12 h-auto"
+              loading="lazy"
+            />
+          ) : (
+            <h1 className="font-display font-bold text-2xl text-sidebar-foreground">Zimbro</h1>
+          )}
         </div>
       </div>
 

@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { auth as apiAuth } from '@/lib/api';
 import { Phone, Lock, ArrowRight } from 'lucide-react';
+import { useBranding } from '@/hooks/useBranding';
 
 export default function Auth() {
   const [phone, setPhone] = useState('');
@@ -17,6 +17,7 @@ export default function Auth() {
   const { signIn, signInWithEmail, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { data: branding } = useBranding();
 
   useEffect(() => {
     if (user) {
@@ -88,9 +89,18 @@ export default function Auth() {
       <div className="relative w-full max-w-md animate-scale-in">
         <div className="glass rounded-2xl p-8 glow-amber">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-28 h-28 rounded-2xl bg-gradient-amber flex items-center justify-center mb-4">
-              <span className="text-4xl font-bold text-primary-foreground">Z</span>
-            </div>
+            {branding?.login_logo_url ? (
+              <img
+                src={branding.login_logo_url}
+                alt="Logo"
+                className="w-28 h-auto mb-4"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-2xl bg-gradient-amber flex items-center justify-center mb-4">
+                <span className="text-4xl font-bold text-primary-foreground">Z</span>
+              </div>
+            )}
             <h1 className="text-2xl font-display font-bold text-foreground">Sistema Zimbro</h1>
           </div>
 
