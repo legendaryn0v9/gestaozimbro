@@ -102,6 +102,10 @@ copy /Y "hostinger\frontend\src\hooks\useRealtimeInventory.ts" "src\hooks\useRea
 if errorlevel 1 (echo ERRO ao copiar useRealtimeInventory.ts & pause & exit /b 1)
 echo   useRealtimeInventory.ts copiado
 
+copy /Y "hostinger\frontend\src\hooks\useBranding.ts" "src\hooks\useBranding.ts" >nul
+if errorlevel 1 (echo ERRO ao copiar useBranding.ts & pause & exit /b 1)
+echo   useBranding.ts copiado
+
 echo Copiando paginas adaptadas...
 copy /Y "hostinger\frontend\src\pages\Auth.tsx" "src\pages\Auth.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar Auth.tsx & pause & exit /b 1)
@@ -196,6 +200,16 @@ echo   StatsCard.tsx copiado
 copy /Y "hostinger\frontend\src\App.tsx" "src\App.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar App.tsx & pause & exit /b 1)
 echo   App.tsx copiado
+
+echo Copiando componentes de usuarios...
+if not exist "src\components\users" mkdir "src\components\users" >nul
+copy /Y "hostinger\frontend\src\components\users\EditAvatarDialog.tsx" "src\components\users\EditAvatarDialog.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar EditAvatarDialog.tsx & pause & exit /b 1)
+echo   EditAvatarDialog.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\users\BrandingManager.tsx" "src\components\users\BrandingManager.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar BrandingManager.tsx & pause & exit /b 1)
+echo   BrandingManager.tsx copiado
 
 echo.
 echo Todos os arquivos copiados com sucesso!

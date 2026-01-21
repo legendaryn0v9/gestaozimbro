@@ -47,6 +47,7 @@ cp -f "hostinger/frontend/src/hooks/useUserSector.ts" "src/hooks/useUserSector.t
 cp -f "hostinger/frontend/src/hooks/useAdminActions.ts" "src/hooks/useAdminActions.ts" 2>/dev/null && echo "- useAdminActions.ts copiado"
 cp -f "hostinger/frontend/src/hooks/use-toast.ts" "src/hooks/use-toast.ts" 2>/dev/null && echo "- use-toast.ts copiado"
 cp -f "hostinger/frontend/src/hooks/useRealtimeInventory.ts" "src/hooks/useRealtimeInventory.ts" 2>/dev/null && echo "- useRealtimeInventory.ts copiado"
+cp -f "hostinger/frontend/src/hooks/useBranding.ts" "src/hooks/useBranding.ts" 2>/dev/null && echo "- useBranding.ts copiado"
 
 echo "Copiando páginas..."
 cp -f "hostinger/frontend/src/pages/Auth.tsx" "src/pages/Auth.tsx" 2>/dev/null && echo "- Auth.tsx copiado"
@@ -77,6 +78,11 @@ cp -f "hostinger/frontend/src/components/inventory/ReportMovementList.tsx" "src/
 cp -f "hostinger/frontend/src/components/inventory/StatsCard.tsx" "src/components/inventory/StatsCard.tsx" 2>/dev/null && echo "- StatsCard.tsx copiado"
 
 cp -f "hostinger/frontend/src/App.tsx" "src/App.tsx" 2>/dev/null && echo "- App.tsx copiado"
+
+echo "Copiando componentes de usuários..."
+mkdir -p "src/components/users"
+cp -f "hostinger/frontend/src/components/users/EditAvatarDialog.tsx" "src/components/users/EditAvatarDialog.tsx" 2>/dev/null && echo "- EditAvatarDialog.tsx copiado"
+cp -f "hostinger/frontend/src/components/users/BrandingManager.tsx" "src/components/users/BrandingManager.tsx" 2>/dev/null && echo "- BrandingManager.tsx copiado"
 
 echo "Arquivos substituídos!"
 echo ""
