@@ -35,6 +35,11 @@
     --warning: 38 92% 50%;
     --warning-foreground: 20 14% 8%;
 
+    /* Role colors (badges) */
+    --role-owner: 272 85% 62%;
+    --role-employee: 210 90% 62%;
+    --role-manager: 36 90% 50%;
+
     --border: 20 14% 20%;
     --input: 20 14% 16%;
     --ring: 36 90% 50%;
@@ -94,6 +99,11 @@
     --border: 40 12% 82%;
     --input: 0 0% 100%;
     --ring: 36 90% 45%;
+
+    /* Role colors (badges) - keep consistent across themes */
+    --role-owner: 272 70% 48%;
+    --role-employee: 210 85% 45%;
+    --role-manager: 36 90% 45%;
 
     /* Sidebar in light */
     --sidebar-background: 40 25% 94%;

@@ -51,6 +51,11 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        role: {
+          owner: "hsl(var(--role-owner))",
+          employee: "hsl(var(--role-employee))",
+          manager: "hsl(var(--role-manager))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
