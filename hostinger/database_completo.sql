@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS `subcategories` (
     `id` VARCHAR(36) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
     `category_id` VARCHAR(36) NOT NULL,
+    `sort_order` INT DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `category_id` (`category_id`),

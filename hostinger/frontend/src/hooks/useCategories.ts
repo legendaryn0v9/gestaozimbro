@@ -34,10 +34,13 @@ export function useCategories(sector?: 'bar' | 'cozinha' | string) {
       ]);
 
       if (catRes.error) throw new Error(catRes.error);
-      if (subRes.error) throw new Error(subRes.error);
+      // Subcategories are optional for the main screens.
+      // If the backend schema is missing sort_order (older installs), the endpoint may error.
+      // In that case, keep the UI working with categories only.
+      const subcategoriesData = subRes.error ? [] : (subRes.data || []);
 
       const subsByCategory = new Map<string, Subcategory[]>();
-      (subRes.data || []).forEach((s: ApiSubcategory) => {
+      subcategoriesData.forEach((s: ApiSubcategory) => {
         const list = subsByCategory.get(s.category_id) || [];
         list.push({
           id: s.id,
@@ -71,6 +74,8 @@ export function useCategories(sector?: 'bar' | 'cozinha' | string) {
       })) as CategoryWithSubcategories[];
     },
     enabled: !!user,
+    // Avoid getting stuck in retry loops on hosting environments when an endpoint is failing.
+    retry: 0,
   });
 }
 
