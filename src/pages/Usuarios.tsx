@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, UserCheck, Crown, Trash2, Wine, UtensilsCrossed, Phone, Star } from 'lucide-react';
+import { Users, UserCheck, Crown, Trash2, UtensilsCrossed, Phone, Star } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { CreateEmployeeDialog } from '@/components/users/CreateEmployeeDialog';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
@@ -91,12 +91,6 @@ export default function Usuarios() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getSectorIcon = (sector: 'bar' | 'cozinha' | null) => {
-    if (sector === 'bar') return <Wine className="w-4 h-4 text-primary" />;
-    if (sector === 'cozinha') return <UtensilsCrossed className="w-4 h-4 text-success" />;
-    return null;
   };
 
   // Filter out the hidden super admin user (full_name === 'admin')
@@ -276,32 +270,40 @@ export default function Usuarios() {
                             </Badge>
                           </div>
 
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {isDono && (
-                              <Select
-                                value={u.role}
-                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
-                                disabled={updateRole.isPending || !canManageRole}
-                              >
-                                <SelectTrigger className="w-full bg-input border-border">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">
-                                    <div className="flex items-center gap-2">
-                                      <Crown className="w-4 h-4" />
-                                      Gestor
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="funcionario">
-                                    <div className="flex items-center gap-2">
-                                      <UserCheck className="w-4 h-4" />
-                                      Funcionário
-                                    </div>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
+                           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             {isDono && !isSelf && (
+                               <Select
+                                 value={u.role}
+                                 onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
+                                 disabled={updateRole.isPending || !canManageRole}
+                               >
+                                 <SelectTrigger className="w-full bg-input border-border">
+                                   <SelectValue />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="admin">
+                                     <div className="flex items-center gap-2">
+                                       <Crown className="w-4 h-4" />
+                                       Gestor
+                                     </div>
+                                   </SelectItem>
+                                   <SelectItem value="funcionario">
+                                     <div className="flex items-center gap-2">
+                                       <UserCheck className="w-4 h-4" />
+                                       Funcionário
+                                     </div>
+                                   </SelectItem>
+                                 </SelectContent>
+                               </Select>
+                             )}
+
+                             {isDono && isSelf && (
+                               <div className="w-full flex justify-center sm:justify-start">
+                                 <Badge variant="roleManager" className="px-3">
+                                   Seu cargo: Gestor
+                                 </Badge>
+                               </div>
+                             )}
 
                             <div className="flex items-center justify-center gap-3 sm:justify-end sm:col-span-1">
                               {isDono && (
@@ -357,8 +359,6 @@ export default function Usuarios() {
                   <div className="space-y-4">
                     {funcionarioUsers.map((u) => {
                       const isSelf = u.id === user?.id;
-                      const canManageRole = isDono && !isSelf;
-                      const canDelete = isDono && !isSelf;
                       return (
                         <div key={u.id} className="rounded-xl border border-border bg-card/50 p-4 shadow-[var(--shadow-card)]">
                           <div className="flex items-start justify-between gap-3">
@@ -383,38 +383,12 @@ export default function Usuarios() {
                               </div>
                             </div>
 
-                            <Badge variant="roleEmployee">
+                            <Badge variant="roleEmployee" className="px-3">
                               FUNCIONÁRIO
                             </Badge>
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {isDono && (
-                              <Select
-                                value={u.role}
-                                onValueChange={(value) => handleRoleChange(u.id, value as AppRole, u.full_name, u.role)}
-                                disabled={updateRole.isPending || !canManageRole}
-                              >
-                                <SelectTrigger className="w-full bg-input border-border">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">
-                                    <div className="flex items-center gap-2">
-                                      <Crown className="w-4 h-4" />
-                                      Gestor
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="funcionario">
-                                    <div className="flex items-center gap-2">
-                                      <UserCheck className="w-4 h-4" />
-                                      Funcionário
-                                    </div>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-
                             <Select
                               value={u.sector || 'none'}
                               onValueChange={(value) => handleSectorChange(u.id, value === 'none' ? null : (value as 'bar' | 'cozinha'), u.full_name, u.sector)}
@@ -426,7 +400,6 @@ export default function Usuarios() {
                               <SelectContent>
                                 <SelectItem value="bar">
                                   <div className="flex items-center gap-2">
-                                    <Wine className="w-4 h-4 text-primary" />
                                     Bar
                                   </div>
                                 </SelectItem>
@@ -443,42 +416,7 @@ export default function Usuarios() {
 
                           <div className="mt-5 flex items-center justify-center gap-3 flex-nowrap">
                             {isDono && (
-                              <EditAvatarDialog userId={u.id} userName={u.full_name} currentAvatarUrl={u.avatar_url} />
-                            )}
-                            {isDono && (
                               <EditEmployeeDialog user={{ id: u.id, full_name: u.full_name, phone: u.phone, sector: u.sector }} />
-                            )}
-                            {isDono && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    disabled={!canDelete}
-                                    className="h-9 w-9 text-destructive hover:bg-destructive/10 disabled:opacity-40"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja excluir <strong>{u.full_name}</strong>? Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteUser(u.id, u.full_name)}
-                                      disabled={!canDelete}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
                             )}
                           </div>
                         </div>
