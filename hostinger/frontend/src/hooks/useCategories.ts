@@ -69,10 +69,10 @@ export function useCategories(sector?: 'bar' | 'cozinha' | string) {
       return ((catRes.data || []) as Category[]).map((cat) => ({
         ...cat,
         sector: cat.sector as 'bar' | 'cozinha',
-        icon: null,
-        gradient: null,
-        sort_order: null,
-        updated_at: cat.created_at,
+        icon: (cat as any).icon ?? null,
+        gradient: (cat as any).gradient ?? null,
+        sort_order: (cat as any).sort_order ?? null,
+        updated_at: (cat as any).updated_at ?? cat.created_at,
         subcategories: subsByCategory.get(cat.id) || [],
       })) as CategoryWithSubcategories[];
     },
@@ -90,6 +90,8 @@ export function useCreateCategory() {
       const result = await categories.create({
         name: data.name,
         sector: data.sector,
+        icon: data.icon,
+        gradient: data.gradient,
       });
       
       if (result.error) throw new Error(result.error);

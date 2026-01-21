@@ -22,9 +22,14 @@ $db = $database->getConnection();
 
 try {
     $id = generateUUID();
+
+    // Optional UI fields
+    $gradient = $data['gradient'] ?? null;
+    $icon = $data['icon'] ?? null;
+    $sortOrder = isset($data['sort_order']) ? (int)$data['sort_order'] : 0;
     
-    $stmt = $db->prepare("INSERT INTO categories (id, name, sector) VALUES (?, ?, ?)");
-    $stmt->execute([$id, $data['name'], $data['sector']]);
+    $stmt = $db->prepare("INSERT INTO categories (id, name, sector, gradient, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$id, $data['name'], $data['sector'], $gradient, $icon, $sortOrder]);
     
     $stmt = $db->prepare("SELECT * FROM categories WHERE id = ?");
     $stmt->execute([$id]);

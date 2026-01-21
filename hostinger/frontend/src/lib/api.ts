@@ -373,6 +373,10 @@ export interface Category {
   id: string;
   name: string;
   sector: string;
+  icon?: string | null;
+  gradient?: string | null;
+  sort_order?: number | null;
+  updated_at?: string;
   created_at: string;
 }
 
@@ -390,7 +394,7 @@ export const categories = {
     return apiRequest(`/categories/list.php${query}`);
   },
 
-  async create(category: { name: string; sector: string }): Promise<ApiResponse<Category>> {
+  async create(category: { name: string; sector: string; icon?: string; gradient?: string; sort_order?: number }): Promise<ApiResponse<Category>> {
     return apiRequest('/categories/create.php', {
       method: 'POST',
       body: JSON.stringify(category),

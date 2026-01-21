@@ -61,10 +61,11 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
   const [newSubcategoryName, setNewSubcategoryName] = useState<Record<string, string>>({});
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
+    const normalizedName = newCategoryName.trim().toUpperCase();
+    if (!normalizedName) return;
 
     await createCategory.mutateAsync({
-      name: newCategoryName.trim(),
+      name: normalizedName,
       sector,
       gradient: newCategoryGradient,
       icon: 'Package',
@@ -80,7 +81,7 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
   };
 
   const handleCreateSubcategory = async (categoryId: string) => {
-    const name = newSubcategoryName[categoryId]?.trim();
+    const name = (newSubcategoryName[categoryId] || '').trim().toUpperCase();
     if (!name) return;
 
     await createSubcategory.mutateAsync({
@@ -121,7 +122,7 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
                 <Input
                   placeholder="Ex: Carnes, Destilados..."
                   value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onChange={(e) => setNewCategoryName(e.target.value.toUpperCase())}
                 />
               </div>
               <div className="space-y-2">
@@ -223,7 +224,7 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
                             onChange={(e) =>
                               setNewSubcategoryName((prev) => ({
                                 ...prev,
-                                [category.id]: e.target.value,
+                                [category.id]: e.target.value.toUpperCase(),
                               }))
                             }
                             onKeyDown={(e) => {
