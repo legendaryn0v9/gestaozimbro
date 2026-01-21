@@ -1,7 +1,6 @@
 import { StockMovement } from '@/hooks/useInventory';
 import { useIsAdmin } from '@/hooks/useUserRoles';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatBrazilTime } from '@/lib/datetime';
 import { TrendingUp, TrendingDown, Clock, Package, User, DollarSign, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -167,7 +166,7 @@ export function ReportMovementList({ movements }: ReportMovementListProps) {
                   className="hover:bg-muted/30 transition-colors"
                 >
                   <TableCell className="font-medium">
-                    {format(new Date(movement.created_at), "HH:mm", { locale: ptBR })}
+                    {formatBrazilTime(movement.created_at, 'time')}
                   </TableCell>
                   <TableCell>
                     <Badge 

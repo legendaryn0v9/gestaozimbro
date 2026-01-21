@@ -1,6 +1,5 @@
 import { StockMovement } from '@/hooks/useInventory';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatBrazilTime } from '@/lib/datetime';
 import { TrendingUp, TrendingDown, User, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -80,7 +79,7 @@ export function MovementList({ movements, showDate = true }: MovementListProps) 
                     <span>{movement.profiles?.full_name}</span>
                   </div>
                   <span>
-                    {format(new Date(movement.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    {formatBrazilTime(movement.created_at, 'dateTime')}
                   </span>
                 </div>
               </div>

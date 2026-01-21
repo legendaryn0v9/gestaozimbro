@@ -38,6 +38,7 @@ echo ""
 
 echo "[3/5] Substituindo arquivos para versão Hostinger..."
 cp -f "hostinger/frontend/src/lib/api.ts" "src/lib/api.ts" 2>/dev/null && echo "- api.ts copiado"
+cp -f "hostinger/frontend/src/lib/datetime.ts" "src/lib/datetime.ts" 2>/dev/null && echo "- datetime.ts copiado"
 cp -f "hostinger/frontend/src/lib/auth.tsx" "src/lib/auth.tsx" 2>/dev/null && echo "- auth.tsx copiado"
 cp -f "hostinger/frontend/src/hooks/useInventory.ts" "src/hooks/useInventory.ts" 2>/dev/null && echo "- useInventory.ts copiado"
 cp -f "hostinger/frontend/src/hooks/useCategories.ts" "src/hooks/useCategories.ts" 2>/dev/null && echo "- useCategories.ts copiado"
