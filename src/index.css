@@ -76,6 +76,20 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'DM Sans', sans-serif;
+    text-transform: uppercase;
+  }
+
+  /* Exibir formulários sempre em MAIÚSCULO (apenas visual) */
+  input,
+  textarea,
+  select,
+  button {
+    text-transform: uppercase;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    text-transform: uppercase;
   }
 
   h1, h2, h3, h4, h5, h6 {
