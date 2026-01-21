@@ -9,6 +9,28 @@ export type UnitType = 'unidade' | 'kg' | 'litro' | 'caixa' | 'pacote';
 
 export type { InventoryItem, StockMovement };
 
+function toNumberSafe(value: unknown, fallback = 0): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'string') {
+    // handle both "10.5" and "10,5" just in case
+    const normalized = value.trim().replace(',', '.');
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  if (value == null) return fallback;
+  const n = Number(value as any);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeInventoryItem(raw: any): InventoryItem {
+  return {
+    ...raw,
+    quantity: toNumberSafe(raw?.quantity, 0),
+    price: toNumberSafe(raw?.price, 0),
+    min_quantity: raw?.min_quantity == null ? null : toNumberSafe(raw?.min_quantity, 0),
+  } as InventoryItem;
+}
+
 export function useInventoryItems(sector?: SectorType) {
   const { user } = useAuth();
 
@@ -17,7 +39,7 @@ export function useInventoryItems(sector?: SectorType) {
     queryFn: async () => {
       const result = await inventory.list(sector);
       if (result.error) throw new Error(result.error);
-      return result.data as InventoryItem[];
+      return (result.data || []).map(normalizeInventoryItem);
     },
     enabled: !!user,
     // Shared hostings may return intermittent 500s; avoid retry loops that feel like infinite loading.
@@ -119,7 +141,7 @@ export function useAddItem() {
     mutationFn: async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>) => {
       const result = await inventory.create(item);
       if (result.error) throw new Error(result.error);
-      return result.data;
+      return result.data ? normalizeInventoryItem(result.data as any) : result.data;
     },
     onSuccess: (created) => {
       if (created) {
@@ -175,7 +197,7 @@ export function useUpdateItem() {
     }) => {
       const result = await inventory.update(id, { ...item, changes });
       if (result.error) throw new Error(result.error);
-      return result.data;
+      return result.data ? normalizeInventoryItem(result.data as any) : result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
