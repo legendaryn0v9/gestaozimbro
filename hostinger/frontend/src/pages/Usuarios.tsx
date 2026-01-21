@@ -1,15 +1,20 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../lib/auth';
 import { useAllUsersWithRoles, useIsAdmin, useIsDono, useUpdateUserRole, useUpdateUserSector, useDeleteUser } from '../hooks/useUserRoles';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
-import { Users, Trash2, Crown, Star, Wine, UtensilsCrossed, Loader2 } from 'lucide-react';
+import { Users, Trash2, Crown, Star, Wine, UtensilsCrossed, Loader2, Plus } from 'lucide-react';
 import { users } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLogAdminAction } from '../hooks/useAdminActions';
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -21,12 +26,77 @@ export default function Usuarios() {
   const updateSector = useUpdateUserSector();
   const deleteUser = useDeleteUser();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const logAction = useLogAdminAction();
+
+  // Create employee state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+    full_name: '',
+    phone: '',
+    password: '',
+    sector: 'bar' as 'bar' | 'cozinha',
+  });
 
   useEffect(() => {
     if (!isAdmin) {
       navigate('/');
     }
   }, [isAdmin, navigate]);
+
+  const handleCreateEmployee = async () => {
+    if (!newEmployee.full_name || !newEmployee.phone || !newEmployee.password) {
+      toast({
+        title: 'Preencha todos os campos',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const response = await users.create({
+        full_name: newEmployee.full_name,
+        phone: newEmployee.phone,
+        password: newEmployee.password,
+        sector: newEmployee.sector,
+        role: 'funcionario',
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao criar funcionário');
+      }
+
+      // Log the action
+      logAction.mutate({
+        actionType: 'create_employee',
+        targetUserName: newEmployee.full_name,
+        details: { sector: newEmployee.sector },
+      });
+
+      toast({
+        title: 'Funcionário criado com sucesso!',
+        description: `${newEmployee.full_name} foi adicionado ao sistema.`,
+      });
+
+      // Reset form and close dialog
+      setNewEmployee({ full_name: '', phone: '', password: '', sector: 'bar' });
+      setCreateDialogOpen(false);
+
+      // Refresh the user list
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+    } catch (error: any) {
+      console.error('Error creating employee:', error);
+      toast({
+        title: 'Erro ao criar funcionário',
+        description: error.message || 'Tente novamente',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const handleRoleChange = (userId: string, newRole: string, userName: string, oldRole: string) => {
     updateRole.mutate({ userId, newRole: newRole as any, userName, oldRole: oldRole as any });
@@ -60,14 +130,103 @@ export default function Usuarios() {
   return (
     <MainLayout>
       <div className="animate-fade-in">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-amber flex items-center justify-center">
-            <Users className="w-6 h-6 text-primary-foreground" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-amber flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Usuários</h1>
+              <p className="text-sm text-muted-foreground">Gerencie os usuários do sistema</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-gradient">Usuários</h1>
-            <p className="text-sm text-muted-foreground">Gerencie os usuários do sistema</p>
-          </div>
+
+          {/* Create Employee Button */}
+          {isDono && (
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-amber text-primary-foreground">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Novo Funcionário
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Novo Funcionário</DialogTitle>
+                  <DialogDescription>
+                    Preencha os dados do novo funcionário
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nome Completo</Label>
+                    <Input
+                      id="fullName"
+                      placeholder="Nome do funcionário"
+                      value={newEmployee.full_name}
+                      onChange={(e) => setNewEmployee(prev => ({ ...prev, full_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input
+                      id="phone"
+                      placeholder="(99) 99999-9999"
+                      value={newEmployee.phone}
+                      onChange={(e) => setNewEmployee(prev => ({ ...prev, phone: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Senha de acesso"
+                      value={newEmployee.password}
+                      onChange={(e) => setNewEmployee(prev => ({ ...prev, password: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sector">Setor</Label>
+                    <Select
+                      value={newEmployee.sector}
+                      onValueChange={(v) => setNewEmployee(prev => ({ ...prev, sector: v as 'bar' | 'cozinha' }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bar">Bar</SelectItem>
+                        <SelectItem value="cozinha">Cozinha</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2 justify-end mt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateDialogOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleCreateEmployee}
+                      disabled={creating}
+                      className="bg-gradient-amber text-primary-foreground"
+                    >
+                      {creating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Criando...
+                        </>
+                      ) : (
+                        'Criar Funcionário'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {isLoading ? (
@@ -78,6 +237,7 @@ export default function Usuarios() {
           <div className="text-center py-16">
             <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-xl font-semibold mb-2">Nenhum usuário cadastrado</h3>
+            <p className="text-muted-foreground">Clique em "Novo Funcionário" para adicionar</p>
           </div>
         ) : (
           <div className="space-y-4">

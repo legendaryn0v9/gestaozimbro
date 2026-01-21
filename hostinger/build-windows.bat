@@ -111,6 +111,92 @@ copy /Y "hostinger\frontend\src\pages\Index.tsx" "src\pages\Index.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar Index.tsx & pause & exit /b 1)
 echo   Index.tsx copiado
 
+copy /Y "hostinger\frontend\src\pages\Dashboard.tsx" "src\pages\Dashboard.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Dashboard.tsx & pause & exit /b 1)
+echo   Dashboard.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\Bar.tsx" "src\pages\Bar.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Bar.tsx & pause & exit /b 1)
+echo   Bar.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\Cozinha.tsx" "src\pages\Cozinha.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Cozinha.tsx & pause & exit /b 1)
+echo   Cozinha.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\Entrada.tsx" "src\pages\Entrada.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Entrada.tsx & pause & exit /b 1)
+echo   Entrada.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\Saida.tsx" "src\pages\Saida.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Saida.tsx & pause & exit /b 1)
+echo   Saida.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\Relatorios.tsx" "src\pages\Relatorios.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Relatorios.tsx & pause & exit /b 1)
+echo   Relatorios.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\Usuarios.tsx" "src\pages\Usuarios.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Usuarios.tsx & pause & exit /b 1)
+echo   Usuarios.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\AdminFormat.tsx" "src\pages\AdminFormat.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar AdminFormat.tsx & pause & exit /b 1)
+echo   AdminFormat.tsx copiado
+
+copy /Y "hostinger\frontend\src\pages\NotFound.tsx" "src\pages\NotFound.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar NotFound.tsx & pause & exit /b 1)
+echo   NotFound.tsx copiado
+
+echo Copiando componentes de layout...
+copy /Y "hostinger\frontend\src\components\layout\MainLayout.tsx" "src\components\layout\MainLayout.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar MainLayout.tsx & pause & exit /b 1)
+echo   MainLayout.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\layout\Sidebar.tsx" "src\components\layout\Sidebar.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Sidebar.tsx & pause & exit /b 1)
+echo   Sidebar.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\layout\MobileHeader.tsx" "src\components\layout\MobileHeader.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar MobileHeader.tsx & pause & exit /b 1)
+echo   MobileHeader.tsx copiado
+
+echo Copiando componentes de inventario...
+copy /Y "hostinger\frontend\src\components\inventory\ItemCard.tsx" "src\components\inventory\ItemCard.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar ItemCard.tsx & pause & exit /b 1)
+echo   ItemCard.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\AddItemDialog.tsx" "src\components\inventory\AddItemDialog.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar AddItemDialog.tsx & pause & exit /b 1)
+echo   AddItemDialog.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\EditItemDialog.tsx" "src\components\inventory\EditItemDialog.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar EditItemDialog.tsx & pause & exit /b 1)
+echo   EditItemDialog.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\MovementDialog.tsx" "src\components\inventory\MovementDialog.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar MovementDialog.tsx & pause & exit /b 1)
+echo   MovementDialog.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\CategoryManagerDialog.tsx" "src\components\inventory\CategoryManagerDialog.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar CategoryManagerDialog.tsx & pause & exit /b 1)
+echo   CategoryManagerDialog.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\MovementList.tsx" "src\components\inventory\MovementList.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar MovementList.tsx & pause & exit /b 1)
+echo   MovementList.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\ReportMovementList.tsx" "src\components\inventory\ReportMovementList.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar ReportMovementList.tsx & pause & exit /b 1)
+echo   ReportMovementList.tsx copiado
+
+copy /Y "hostinger\frontend\src\components\inventory\StatsCard.tsx" "src\components\inventory\StatsCard.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar StatsCard.tsx & pause & exit /b 1)
+echo   StatsCard.tsx copiado
+
+copy /Y "hostinger\frontend\src\App.tsx" "src\App.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar App.tsx & pause & exit /b 1)
+echo   App.tsx copiado
+
 echo.
 echo Todos os arquivos copiados com sucesso!
 echo.
