@@ -67,8 +67,8 @@
     --sidebar-ring: 36 90% 50%;
   }
 
-  /* Light theme (toggle adds class 'light' on <html>) */
-  .light {
+  /* Light theme (ThemeProvider adds class 'light' on <html>) */
+  :root.light {
     --background: 40 30% 96%;
     --foreground: 20 14% 10%;
 

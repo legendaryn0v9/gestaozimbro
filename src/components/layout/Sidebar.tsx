@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { 
   Wine, 
   UtensilsCrossed, 
@@ -20,6 +20,9 @@ import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import logoImg from '@/assets/logo.png';
+import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
+import { Moon, Sun } from 'lucide-react';
 
 const baseMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/', sector: null },
@@ -45,6 +48,12 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const { isDono } = useIsDono();
   const { data: profile } = useCurrentUserProfile(user?.id);
   const { sector } = useUserSector();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleClick = () => {
     onNavigate?.();
@@ -147,22 +156,42 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                {isDono ? (
-                  <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/50 text-xs">
-                    <Star className="w-3 h-3 mr-1" />
-                    Dono
-                  </Badge>
-                ) : isAdmin ? (
-                  <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Gestor
-                  </Badge>
-                ) : (
-                  <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
-                    Funcionário
-                  </Badge>
-                )}
+              <div className="space-y-3">
+                <div className="pb-3 border-b border-sidebar-border/70">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setTheme((mounted && theme === 'light') ? 'dark' : 'light')}
+                    aria-label="Alternar cor do fundo (tema claro/escuro)"
+                    className="w-full justify-center"
+                  >
+                    {(mounted && theme === 'light') ? (
+                      <Sun className="w-4 h-4 mr-2" />
+                    ) : (
+                      <Moon className="w-4 h-4 mr-2" />
+                    )}
+                    {(mounted && theme === 'light') ? 'Fundo branco' : 'Fundo escuro'}
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-center">
+                  {isDono ? (
+                    <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/50 text-xs">
+                      <Star className="w-3 h-3 mr-1" />
+                      Dono
+                    </Badge>
+                  ) : isAdmin ? (
+                    <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Gestor
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
+                      Funcionário
+                    </Badge>
+                  )}
+                </div>
               </div>
               <p className="text-sm font-medium text-sidebar-foreground truncate mt-1">
                 {profile?.full_name || user?.email}

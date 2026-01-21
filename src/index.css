@@ -66,6 +66,49 @@
     --sidebar-border: 20 14% 18%;
     --sidebar-ring: 36 90% 50%;
   }
+
+  /* Light theme (ThemeProvider adds class 'light' on <html>) */
+  :root.light {
+    --background: 40 30% 96%;
+    --foreground: 20 14% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 10%;
+
+    /* Keep amber brand accent */
+    --primary: 36 90% 45%;
+    --primary-foreground: 20 14% 10%;
+
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 20 14% 12%;
+
+    --muted: 40 18% 90%;
+    --muted-foreground: 20 10% 40%;
+
+    --accent: 36 80% 45%;
+    --accent-foreground: 20 14% 10%;
+
+    --border: 40 12% 82%;
+    --input: 0 0% 100%;
+    --ring: 36 90% 45%;
+
+    /* Sidebar in light */
+    --sidebar-background: 40 25% 94%;
+    --sidebar-foreground: 20 14% 15%;
+    --sidebar-primary: 36 90% 45%;
+    --sidebar-primary-foreground: 20 14% 10%;
+    --sidebar-accent: 40 20% 90%;
+    --sidebar-accent-foreground: 20 14% 15%;
+    --sidebar-border: 40 12% 82%;
+    --sidebar-ring: 36 90% 45%;
+
+    /* Gradients + shadows tuned for light */
+    --gradient-dark: linear-gradient(180deg, hsl(40, 25%, 98%) 0%, hsl(40, 25%, 94%) 100%);
+    --shadow-card: 0 10px 30px hsl(20 14% 10% / 0.12);
+  }
 }
 
 @layer base {

@@ -162,24 +162,26 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setTheme((mounted && theme === 'light') ? 'dark' : 'light')}
-                  aria-label="Alternar cor do fundo (tema claro/escuro)"
-                  className="w-full justify-start"
-                >
-                  {(mounted && theme === 'light') ? (
-                    <Sun className="w-4 h-4 mr-2" />
-                  ) : (
-                    <Moon className="w-4 h-4 mr-2" />
-                  )}
-                  {(mounted && theme === 'light') ? 'Fundo branco' : 'Fundo escuro'}
-                </Button>
+              <div className="space-y-3">
+                <div className="pb-3 border-b border-sidebar-border/70">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setTheme((mounted && theme === 'light') ? 'dark' : 'light')}
+                    aria-label="Alternar cor do fundo (tema claro/escuro)"
+                    className="w-full justify-center"
+                  >
+                    {(mounted && theme === 'light') ? (
+                      <Sun className="w-4 h-4 mr-2" />
+                    ) : (
+                      <Moon className="w-4 h-4 mr-2" />
+                    )}
+                    {(mounted && theme === 'light') ? 'Fundo branco' : 'Fundo escuro'}
+                  </Button>
+                </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center">
                   {isDono ? (
                     <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/50 text-xs">
                       <Star className="w-3 h-3 mr-1" />
