@@ -143,6 +143,10 @@ copy /Y "hostinger\frontend\src\pages\Usuarios.tsx" "src\pages\Usuarios.tsx" >nu
 if errorlevel 1 (echo ERRO ao copiar Usuarios.tsx & pause & exit /b 1)
 echo   Usuarios.tsx copiado
 
+copy /Y "hostinger\frontend\src\pages\Personalizacao.tsx" "src\pages\Personalizacao.tsx" >nul
+if errorlevel 1 (echo ERRO ao copiar Personalizacao.tsx & pause & exit /b 1)
+echo   Personalizacao.tsx copiado
+
 copy /Y "hostinger\frontend\src\pages\AdminFormat.tsx" "src\pages\AdminFormat.tsx" >nul
 if errorlevel 1 (echo ERRO ao copiar AdminFormat.tsx & pause & exit /b 1)
 echo   AdminFormat.tsx copiado

@@ -12,6 +12,7 @@ import Entrada from "./pages/Entrada";
 import Saida from "./pages/Saida";
 import Relatorios from "./pages/Relatorios";
 import Usuarios from "./pages/Usuarios";
+import Personalizacao from "./pages/Personalizacao";
 import AdminFormat from "./pages/AdminFormat";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/saida" element={<Saida />} />
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/usuarios" element={<Usuarios />} />
+            <Route path="/personalizacao" element={<Personalizacao />} />
             <Route path="/admin-format" element={<AdminFormat />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
