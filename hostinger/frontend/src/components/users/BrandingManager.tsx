@@ -3,11 +3,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Image as ImageIcon, Sun, Moon } from 'lucide-react';
+import { Upload, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBranding, useUpdateSystemName, useUploadLogo } from '@/hooks/useBranding';
-import { Switch } from '@/components/ui/switch';
-import { useTheme } from 'next-themes';
 
 function LogoCard({
   title,
@@ -105,7 +103,6 @@ export function BrandingManager() {
   const updateSystemName = useUpdateSystemName();
   const { toast } = useToast();
   const [systemName, setSystemName] = useState('');
-  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     setSystemName((data as any)?.system_name || 'Sistema Zimbro');
@@ -161,25 +158,6 @@ export function BrandingManager() {
           </Button>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">Aparece abaixo das logos no login e no dashboard.</p>
-      </Card>
-
-      <Card className="p-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="font-semibold">Tema claro</div>
-            <div className="text-sm text-muted-foreground">Escolha entre escuro e claro (por preferência do usuário).</div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Moon className="w-4 h-4 text-muted-foreground" />
-            <Switch
-              checked={theme === 'light'}
-              onCheckedChange={(checked) => setTheme(checked ? 'light' : 'dark')}
-              aria-label="Alternar tema claro"
-            />
-            <Sun className="w-4 h-4 text-muted-foreground" />
-          </div>
-        </div>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
