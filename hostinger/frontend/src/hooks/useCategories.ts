@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { categories, Category } from '../lib/api';
+import { categories, subcategories, Category, Subcategory as ApiSubcategory } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { toast } from 'sonner';
 
@@ -28,21 +28,47 @@ export function useCategories(sector?: 'bar' | 'cozinha' | string) {
   return useQuery({
     queryKey: ['categories', sector],
     queryFn: async () => {
-      const result = await categories.list(sector);
-      if (result.error) throw new Error(result.error);
-      
-      // Transform to CategoryWithSubcategories format
-      const categoriesWithSubs: CategoryWithSubcategories[] = (result.data || []).map((cat) => ({
+      const [catRes, subRes] = await Promise.all([
+        categories.list(sector),
+        subcategories.list({ sector: sector || undefined }),
+      ]);
+
+      if (catRes.error) throw new Error(catRes.error);
+      if (subRes.error) throw new Error(subRes.error);
+
+      const subsByCategory = new Map<string, Subcategory[]>();
+      (subRes.data || []).forEach((s: ApiSubcategory) => {
+        const list = subsByCategory.get(s.category_id) || [];
+        list.push({
+          id: s.id,
+          category_id: s.category_id,
+          name: s.name,
+          sort_order: (s.sort_order ?? null) as number | null,
+          created_at: s.created_at,
+        });
+        subsByCategory.set(s.category_id, list);
+      });
+
+      // keep stable order
+      for (const [key, list] of subsByCategory) {
+        list.sort((a, b) => {
+          const ao = a.sort_order ?? 0;
+          const bo = b.sort_order ?? 0;
+          if (ao !== bo) return ao - bo;
+          return a.name.localeCompare(b.name);
+        });
+        subsByCategory.set(key, list);
+      }
+
+      return ((catRes.data || []) as Category[]).map((cat) => ({
         ...cat,
         sector: cat.sector as 'bar' | 'cozinha',
         icon: null,
         gradient: null,
         sort_order: null,
         updated_at: cat.created_at,
-        subcategories: [],
-      }));
-      
-      return categoriesWithSubs;
+        subcategories: subsByCategory.get(cat.id) || [],
+      })) as CategoryWithSubcategories[];
     },
     enabled: !!user,
   });
@@ -118,16 +144,12 @@ export function useCreateSubcategory() {
 
   return useMutation({
     mutationFn: async (data: { category_id: string; name: string; sector: 'bar' | 'cozinha' }) => {
-      // API PHP não tem subcategorias implementadas ainda
-      // Por enquanto, retorna um mock
-      console.warn('Create subcategory not implemented in PHP backend');
-      return {
-        id: crypto.randomUUID(),
+      const result = await subcategories.create({
         category_id: data.category_id,
         name: data.name,
-        sort_order: null,
-        created_at: new Date().toISOString(),
-      };
+      });
+      if (result.error) throw new Error(result.error);
+      return result.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['categories', variables.sector] });
@@ -145,9 +167,9 @@ export function useDeleteSubcategory() {
 
   return useMutation({
     mutationFn: async (data: { id: string; sector: 'bar' | 'cozinha' }) => {
-      // API PHP não tem subcategorias implementadas ainda
-      console.warn('Delete subcategory not implemented in PHP backend');
-      return { success: true };
+      const result = await subcategories.delete(data.id);
+      if (result.error) throw new Error(result.error);
+      return result.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['categories', variables.sector] });
