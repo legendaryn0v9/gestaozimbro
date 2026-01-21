@@ -183,7 +183,7 @@ export default function Usuarios() {
                               </div>
                             </div>
 
-                            <Badge variant="outline" className="border-primary text-primary">
+                            <Badge variant="roleOwner">
                               <Star className="w-3.5 h-3.5 mr-1" />
                               DONO
                             </Badge>
@@ -270,7 +270,7 @@ export default function Usuarios() {
                               </div>
                             </div>
 
-                            <Badge variant="outline" className="border-border text-foreground">
+                            <Badge variant="roleManager">
                               <Crown className="w-3.5 h-3.5 mr-1" />
                               GESTOR
                             </Badge>
@@ -383,7 +383,7 @@ export default function Usuarios() {
                               </div>
                             </div>
 
-                            <Badge variant="outline" className="border-border text-foreground">
+                            <Badge variant="roleEmployee">
                               FUNCIONÁRIO
                             </Badge>
                           </div>
