@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { inventory, movements, InventoryItem, StockMovement } from '../lib/api';
+import { inventory, movements, history, InventoryItem, StockMovement, ProductEditHistory } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useToast } from './use-toast';
 
@@ -82,6 +82,21 @@ export function useEmployeeRanking() {
         }))
         .sort((a, b) => b.total_saidas - a.total_saidas)
         .slice(0, 5);
+    },
+    enabled: !!user,
+  });
+}
+
+// Hook to fetch product edit history
+export function useProductEditHistory(date?: string) {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['product-edit-history', date, user?.id],
+    queryFn: async () => {
+      const result = await history.list(date);
+      if (result.error) throw new Error(result.error);
+      return result.data as ProductEditHistory[];
     },
     enabled: !!user,
   });
