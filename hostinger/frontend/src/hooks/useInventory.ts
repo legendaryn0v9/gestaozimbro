@@ -10,6 +10,8 @@ export type UnitType = 'unidade' | 'kg' | 'litro' | 'caixa' | 'pacote';
 export type { InventoryItem, StockMovement };
 
 export function useInventoryItems(sector?: SectorType) {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['inventory-items', sector],
     queryFn: async () => {
@@ -17,6 +19,9 @@ export function useInventoryItems(sector?: SectorType) {
       if (result.error) throw new Error(result.error);
       return result.data as InventoryItem[];
     },
+    enabled: !!user,
+    // Shared hostings may return intermittent 500s; avoid retry loops that feel like infinite loading.
+    retry: 0,
   });
 }
 
@@ -31,6 +36,7 @@ export function useStockMovements(date?: string) {
       return result.data as StockMovement[];
     },
     enabled: !!user,
+    retry: 0,
   });
 }
 
@@ -45,6 +51,7 @@ export function useMovementDates() {
       return result.data as string[];
     },
     enabled: !!user,
+    retry: 0,
   });
 }
 
@@ -84,6 +91,7 @@ export function useEmployeeRanking() {
         .slice(0, 5);
     },
     enabled: !!user,
+    retry: 0,
   });
 }
 
@@ -99,6 +107,7 @@ export function useProductEditHistory(date?: string) {
       return result.data as ProductEditHistory[];
     },
     enabled: !!user,
+    retry: 0,
   });
 }
 
@@ -112,7 +121,29 @@ export function useAddItem() {
       if (result.error) throw new Error(result.error);
       return result.data;
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
+      if (created) {
+        const upsert = (key: unknown[]) => {
+          queryClient.setQueryData(key, (old: InventoryItem[] | undefined) => {
+            const list = Array.isArray(old) ? old : [];
+            if (list.some((i) => i.id === created.id)) return list;
+            const next = [...list, created];
+            next.sort((a, b) => {
+              const ac = (a.category || '').toString();
+              const bc = (b.category || '').toString();
+              if (ac !== bc) return ac.localeCompare(bc);
+              return a.name.localeCompare(b.name);
+            });
+            return next;
+          });
+        };
+
+        // Update both the "all items" cache and the sector cache for instant UI feedback.
+        upsert(['inventory-items', undefined]);
+        upsert(['inventory-items', created.sector as any]);
+      }
+
+      // Also refetch in background to stay consistent with server.
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       toast({
         title: 'Item adicionado!',
