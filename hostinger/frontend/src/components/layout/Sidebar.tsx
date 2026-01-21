@@ -147,62 +147,62 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-sidebar-border">
+        {/* Tema (acima e separado por linha) */}
         <div className="mb-4 px-2">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-sidebar-border">
-              <AvatarImage src={user?.avatar_url || undefined} alt={user?.full_name} />
-              <AvatarFallback className={
-                isDono 
-                  ? 'bg-purple-500/20 text-purple-500' 
-                  : isAdmin 
-                    ? 'bg-amber-500/20 text-amber-500' 
-                    : 'bg-blue-500/20 text-blue-500'
-              }>
-                {getInitials(user?.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="space-y-3">
-                <div className="pb-3 border-b border-sidebar-border/70">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setTheme((mounted && theme === 'light') ? 'dark' : 'light')}
-                    aria-label="Alternar cor do fundo (tema claro/escuro)"
-                    className="w-full justify-center"
-                  >
-                    {(mounted && theme === 'light') ? (
-                      <Sun className="w-4 h-4 mr-2" />
-                    ) : (
-                      <Moon className="w-4 h-4 mr-2" />
-                    )}
-                    {(mounted && theme === 'light') ? 'Fundo branco' : 'Fundo escuro'}
-                  </Button>
-                </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setTheme((mounted && theme === 'light') ? 'dark' : 'light')}
+            aria-label="Alternar cor do fundo (tema claro/escuro)"
+            className="w-full justify-center"
+          >
+            {(mounted && theme === 'light') ? (
+              <Sun className="w-4 h-4 mr-2" />
+            ) : (
+              <Moon className="w-4 h-4 mr-2" />
+            )}
+            {(mounted && theme === 'light') ? 'Fundo branco' : 'Fundo escuro'}
+          </Button>
+        </div>
 
-                <div className="flex items-center justify-center">
-                  {isDono ? (
-                    <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/50 text-xs">
-                      <Star className="w-3 h-3 mr-1" />
-                      Dono
-                    </Badge>
-                  ) : isAdmin ? (
-                    <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
-                      <Crown className="w-3 h-3 mr-1" />
-                      Gestor
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
-                      Funcionário
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm font-medium text-sidebar-foreground truncate mt-1">
-                {user?.full_name || user?.email}
-              </p>
-            </div>
+        <div className="border-t border-sidebar-border mb-4" />
+
+        {/* Usuário (centralizado) */}
+        <div className="mb-4 px-2 flex flex-col items-center text-center">
+          <Avatar className="h-12 w-12 border-2 border-sidebar-border">
+            <AvatarImage src={user?.avatar_url || undefined} alt={user?.full_name} />
+            <AvatarFallback className={
+              isDono 
+                ? 'bg-purple-500/20 text-purple-500' 
+                : isAdmin 
+                  ? 'bg-amber-500/20 text-amber-500' 
+                  : 'bg-blue-500/20 text-blue-500'
+            }>
+              {getInitials(user?.full_name)}
+            </AvatarFallback>
+          </Avatar>
+
+          <p className="text-sm font-medium text-sidebar-foreground mt-3">
+            {user?.full_name || user?.email}
+          </p>
+
+          <div className="mt-2">
+            {isDono ? (
+              <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/50 text-xs">
+                <Star className="w-3 h-3 mr-1" />
+                Dono
+              </Badge>
+            ) : isAdmin ? (
+              <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
+                <Crown className="w-3 h-3 mr-1" />
+                Gestor
+              </Badge>
+            ) : (
+              <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs">
+                Funcionário
+              </Badge>
+            )}
           </div>
         </div>
         <button
