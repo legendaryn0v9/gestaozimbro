@@ -1,43 +1,81 @@
 #!/bin/bash
 
-echo "========================================"
-echo "  Build Sistema Zimbro para Hostinger"
-echo "========================================"
+echo ""
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║          BUILD SISTEMA ZIMBRO PARA HOSTINGER                 ║"
+echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
-echo "[1/4] Copiando arquivos adaptados para Hostinger..."
-cp -f hostinger/frontend/src/lib/api.ts src/lib/api.ts
-cp -f hostinger/frontend/src/lib/auth.tsx src/lib/auth.tsx
-cp -f hostinger/frontend/src/hooks/useInventory.ts src/hooks/useInventory.ts
-cp -f hostinger/frontend/src/hooks/useCategories.ts src/hooks/useCategories.ts
-cp -f hostinger/frontend/src/hooks/useUserProfile.ts src/hooks/useUserProfile.ts
-cp -f hostinger/frontend/src/hooks/useUserRoles.ts src/hooks/useUserRoles.ts
-cp -f hostinger/frontend/src/hooks/useUserSector.ts src/hooks/useUserSector.ts
-echo "Arquivos copiados!"
+# Navigate to project root
+cd "$(dirname "$0")/.."
+echo "Diretório: $(pwd)"
 echo ""
 
-echo "[2/4] Instalando dependencias (aguarde)..."
+echo "[1/5] Verificando Node.js..."
+if ! command -v node &> /dev/null; then
+    echo ""
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║  ERRO: Node.js não encontrado!                                ║"
+    echo "║                                                               ║"
+    echo "║  1. Acesse https://nodejs.org                                 ║"
+    echo "║  2. Baixe e instale a versão LTS                              ║"
+    echo "║  3. Execute este script novamente                             ║"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+    echo ""
+    exit 1
+fi
+echo "Node.js encontrado!"
+echo ""
+
+echo "[2/5] Instalando dependências (aguarde, pode demorar)..."
 npm install
-echo "Dependencias instaladas!"
+if [ $? -ne 0 ]; then
+    echo "ERRO ao instalar dependências!"
+    exit 1
+fi
+echo "Dependências instaladas!"
 echo ""
 
-echo "[3/4] Gerando build de producao (aguarde)..."
+echo "[3/5] Substituindo arquivos para versão Hostinger..."
+cp -f "hostinger/frontend/src/lib/api.ts" "src/lib/api.ts" 2>/dev/null && echo "- api.ts copiado"
+cp -f "hostinger/frontend/src/lib/auth.tsx" "src/lib/auth.tsx" 2>/dev/null && echo "- auth.tsx copiado"
+cp -f "hostinger/frontend/src/hooks/useInventory.ts" "src/hooks/useInventory.ts" 2>/dev/null && echo "- useInventory.ts copiado"
+cp -f "hostinger/frontend/src/hooks/useCategories.ts" "src/hooks/useCategories.ts" 2>/dev/null && echo "- useCategories.ts copiado"
+cp -f "hostinger/frontend/src/hooks/useUserProfile.ts" "src/hooks/useUserProfile.ts" 2>/dev/null && echo "- useUserProfile.ts copiado"
+cp -f "hostinger/frontend/src/hooks/useUserRoles.ts" "src/hooks/useUserRoles.ts" 2>/dev/null && echo "- useUserRoles.ts copiado"
+cp -f "hostinger/frontend/src/hooks/useUserSector.ts" "src/hooks/useUserSector.ts" 2>/dev/null && echo "- useUserSector.ts copiado"
+cp -f "hostinger/frontend/src/pages/Auth.tsx" "src/pages/Auth.tsx" 2>/dev/null && echo "- Auth.tsx copiado"
+cp -f "hostinger/frontend/src/pages/Index.tsx" "src/pages/Index.tsx" 2>/dev/null && echo "- Index.tsx copiado"
+echo "Arquivos substituídos!"
+echo ""
+
+echo "[4/5] Gerando build de produção (aguarde)..."
 npm run build
+if [ $? -ne 0 ]; then
+    echo "ERRO ao gerar build!"
+    exit 1
+fi
 echo "Build gerado!"
 echo ""
 
-echo "[4/4] Copiando .htaccess para pasta dist..."
-cp -f hostinger/frontend/.htaccess dist/.htaccess
+echo "[5/5] Copiando arquivos para pasta hostinger/dist..."
+mkdir -p hostinger/dist
+cp -r dist/* hostinger/dist/
+[ -f "hostinger/frontend/.htaccess" ] && cp -f "hostinger/frontend/.htaccess" "hostinger/dist/.htaccess"
+echo "Arquivos copiados para hostinger/dist!"
 echo ""
 
-echo "========================================"
-echo "  BUILD CONCLUIDO COM SUCESSO!"
-echo "========================================"
-echo ""
-echo "Agora faca upload para a Hostinger:"
-echo "1. Conteudo da pasta 'dist/' para 'public_html/'"
-echo "2. Conteudo de 'hostinger/backend/' para 'public_html/api/'"
-echo ""
-echo "Nao esqueca de configurar o banco em:"
-echo "public_html/api/config/database.php"
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║                    BUILD CONCLUÍDO!                          ║"
+echo "╠══════════════════════════════════════════════════════════════╣"
+echo "║                                                              ║"
+echo "║  Agora faça upload para a Hostinger:                        ║"
+echo "║                                                              ║"
+echo "║  1. Conteúdo de 'hostinger/dist/'    → public_html/         ║"
+echo "║  2. Conteúdo de 'hostinger/backend/' → public_html/api/     ║"
+echo "║                                                              ║"
+echo "║  Configure o banco em:                                       ║"
+echo "║  public_html/api/config/database.php                        ║"
+echo "║                                                              ║"
+echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
