@@ -1,6 +1,15 @@
 # Enable mod_rewrite
 RewriteEngine On
 
+# IMPORTANT: Preserve Authorization header for PHP (JWT Bearer)
+# Many shared hostings strip this header unless explicitly forwarded.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase Authorization "^(.+)$" HTTP_AUTHORIZATION=$1
+</IfModule>
+
 # Handle API requests
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

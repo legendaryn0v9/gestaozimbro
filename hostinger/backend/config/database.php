@@ -115,8 +115,14 @@ function validateToken($token) {
 // FUNÇÕES DE AUTENTICAÇÃO
 // =====================================================
 function getAuthUser() {
-    $headers = getallheaders();
-    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+    // Shared hostings often don't expose the Authorization header to PHP by default.
+    // Try multiple sources (headers + server vars) for maximum compatibility.
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization']
+        ?? $headers['authorization']
+        ?? ($_SERVER['HTTP_AUTHORIZATION'] ?? null)
+        ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null)
+        ?? '';
     
     if (empty($authHeader) || !preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
         return null;
