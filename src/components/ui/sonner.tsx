@@ -1,17 +1,17 @@
 import * as React from "react";
 import { Toaster as Sonner, toast } from "sonner";
+import { useTheme } from "next-themes";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // This project uses a fixed dark theme (no ThemeProvider / theme toggle).
-  // Avoid next-themes here to prevent runtime crashes from missing provider.
-  const theme: NonNullable<ToasterProps["theme"]> = "dark";
+  const { theme } = useTheme();
+  const resolvedTheme: NonNullable<ToasterProps["theme"]> = theme === "light" ? "light" : "dark";
 
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={resolvedTheme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
         classNames: {
