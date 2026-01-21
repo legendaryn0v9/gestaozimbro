@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -64,38 +64,54 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
     const normalizedName = newCategoryName.trim().toUpperCase();
     if (!normalizedName) return;
 
-    await createCategory.mutateAsync({
-      name: normalizedName,
-      sector,
-      gradient: newCategoryGradient,
-      icon: 'Package',
-    });
+    try {
+      await createCategory.mutateAsync({
+        name: normalizedName,
+        sector,
+        gradient: newCategoryGradient,
+        icon: 'Package',
+      });
 
-    setNewCategoryName('');
-    setNewCategoryGradient(GRADIENT_OPTIONS[0].value);
+      setNewCategoryName('');
+      setNewCategoryGradient(GRADIENT_OPTIONS[0].value);
+    } catch {
+      // erro já é tratado pelo hook (toast + console)
+    }
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (!confirm('Tem certeza que deseja excluir esta categoria e todas suas subcategorias?')) return;
-    await deleteCategory.mutateAsync({ id: categoryId, sector });
+    try {
+      await deleteCategory.mutateAsync({ id: categoryId, sector });
+    } catch {
+      // tratado no hook
+    }
   };
 
   const handleCreateSubcategory = async (categoryId: string) => {
     const name = (newSubcategoryName[categoryId] || '').trim().toUpperCase();
     if (!name) return;
 
-    await createSubcategory.mutateAsync({
-      category_id: categoryId,
-      name,
-      sector,
-    });
+    try {
+      await createSubcategory.mutateAsync({
+        category_id: categoryId,
+        name,
+        sector,
+      });
 
-    setNewSubcategoryName((prev) => ({ ...prev, [categoryId]: '' }));
+      setNewSubcategoryName((prev) => ({ ...prev, [categoryId]: '' }));
+    } catch {
+      // tratado no hook
+    }
   };
 
   const handleDeleteSubcategory = async (subcategoryId: string) => {
     if (!confirm('Tem certeza que deseja excluir esta subcategoria?')) return;
-    await deleteSubcategory.mutateAsync({ id: subcategoryId, sector });
+    try {
+      await deleteSubcategory.mutateAsync({ id: subcategoryId, sector });
+    } catch {
+      // tratado no hook
+    }
   };
 
   const sectorLabel = sector === 'cozinha' ? 'Cozinha' : 'Bar';
@@ -122,7 +138,9 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
                 <Input
                   placeholder="Ex: Carnes, Destilados..."
                   value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value.toUpperCase())}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setNewCategoryName(e.target.value.toUpperCase())
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -221,13 +239,13 @@ export function CategoryManagerDialog({ open, onOpenChange, sector }: CategoryMa
                           <Input
                             placeholder="Nova subcategoria..."
                             value={newSubcategoryName[category.id] || ''}
-                            onChange={(e) =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               setNewSubcategoryName((prev) => ({
                                 ...prev,
                                 [category.id]: e.target.value.toUpperCase(),
                               }))
                             }
-                            onKeyDown={(e) => {
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                               if (e.key === 'Enter') {
                                 handleCreateSubcategory(category.id);
                               }
