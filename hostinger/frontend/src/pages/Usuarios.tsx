@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLogAdminAction } from '../hooks/useAdminActions';
 import { EditAvatarDialog } from '@/components/users/EditAvatarDialog';
 import { EditUserDialog } from '@/components/users/EditUserDialog';
+import { useRealtimeUsers } from '../hooks/useRealtimeUsers';
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -30,6 +31,9 @@ export default function Usuarios() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const logAction = useLogAdminAction();
+
+  // Polling mais rápido só para a tela de Usuários (sem sobrecarregar as telas de estoque)
+  useRealtimeUsers();
 
   // Create employee state
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -86,8 +90,28 @@ export default function Usuarios() {
       setNewEmployee({ full_name: '', phone: '', password: '', sector: 'bar' });
       setCreateDialogOpen(false);
 
-      // Refresh the user list
-      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      // Atualiza a lista imediatamente (sem esperar polling)
+      if (response.data) {
+        const created = response.data;
+        queryClient.setQueryData(['all-users-roles'], (old: any) => {
+          const list = Array.isArray(old) ? old : [];
+          if (list.some((x: any) => x?.id === created.id)) return list;
+          const mapped = {
+            id: created.id,
+            email: created.email,
+            full_name: created.full_name,
+            avatar_url: created.avatar_url || null,
+            phone: created.phone || null,
+            sector: (created.sector as any) || null,
+            role: (created.role as any) || 'funcionario',
+            role_id: created.id,
+          };
+          return [mapped, ...list];
+        });
+      }
+
+      // E força refetch no key correto
+      queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
     } catch (error: any) {
       console.error('Error creating employee:', error);
       toast({
