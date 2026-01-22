@@ -13,17 +13,34 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [mounted, setMounted] = useState(false);
 
   const { signIn, signInWithEmail, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: branding } = useBranding();
 
+  // Ensure theme is applied before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Show loading with fixed dark background until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'hsl(30, 10%, 8%)' }}>
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-amber mx-auto mb-4 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   const normalizePhone = (input: string): string => {
     return input.replace(/\D/g, '');
