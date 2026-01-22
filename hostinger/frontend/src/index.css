@@ -244,3 +244,35 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/*
+  iPhone/iOS (Chrome/Safari): backdrop-filter e filtros de blur pesados podem
+  travar a aba e fazer a página “sumir” (ficar só o fundo). Aqui reduzimos esses
+  efeitos APENAS no iOS para estabilizar.
+*/
+@supports (-webkit-touch-callout: none) {
+  .glass {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-color: hsl(var(--card) / 0.92) !important;
+  }
+
+  .backdrop-blur-sm,
+  .backdrop-blur,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Reduz custo de blur em elementos grandes (ex.: bolhas/spotlights) */
+  .blur-3xl {
+    filter: blur(32px) !important;
+  }
+  .blur-2xl {
+    filter: blur(24px) !important;
+  }
+}
