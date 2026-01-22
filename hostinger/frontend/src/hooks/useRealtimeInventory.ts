@@ -11,7 +11,7 @@ export function useRealtimeInventory() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // No Hostinger usamos polling (aqui: 5s) para simular atualizações em tempo real
+    // No Hostinger usamos polling (aqui: 2s) para atualizações mais rápidas em tempo real
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
@@ -21,7 +21,10 @@ export function useRealtimeInventory() {
       queryClient.invalidateQueries({ queryKey: ['all-users-roles'] });
       queryClient.invalidateQueries({ queryKey: ['admin-actions'] });
       queryClient.invalidateQueries({ queryKey: ['branding'] });
-    }, 5000);
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['current-user-role'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    }, 2000);
 
     return () => {
       clearInterval(interval);

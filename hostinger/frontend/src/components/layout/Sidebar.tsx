@@ -25,13 +25,23 @@ import { useBranding } from '@/hooks/useBranding';
 import { Button } from '../ui/button';
 import { useTheme } from 'next-themes';
 
+// Menu items definidos estaticamente para evitar problemas de cache/renderização
+const MENU_ITEMS = {
+  PAINEL: 'Painel',
+  BAR: 'Bar',
+  COZINHA: 'Cozinha',
+  ENTRADA: 'Entrada',
+  SAIDA: 'Saída',
+  RELATORIOS: 'Relatórios',
+} as const;
+
 const baseMenuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/', sector: null },
-  { icon: Wine, label: 'Bar', path: '/bar', sector: 'bar' as const },
-  { icon: UtensilsCrossed, label: 'Cozinha', path: '/cozinha', sector: 'cozinha' as const },
-  { icon: TrendingUp, label: 'Entrada', path: '/entrada', sector: null },
-  { icon: TrendingDown, label: 'Saída', path: '/saida', sector: null },
-  { icon: ClipboardList, label: 'Relatórios', path: '/relatorios', sector: null },
+  { icon: LayoutDashboard, label: MENU_ITEMS.PAINEL, path: '/', sector: null },
+  { icon: Wine, label: MENU_ITEMS.BAR, path: '/bar', sector: 'bar' as const },
+  { icon: UtensilsCrossed, label: MENU_ITEMS.COZINHA, path: '/cozinha', sector: 'cozinha' as const },
+  { icon: TrendingUp, label: MENU_ITEMS.ENTRADA, path: '/entrada', sector: null },
+  { icon: TrendingDown, label: MENU_ITEMS.SAIDA, path: '/saida', sector: null },
+  { icon: ClipboardList, label: MENU_ITEMS.RELATORIOS, path: '/relatorios', sector: null },
 ];
 
 const adminMenuItems: Array<{ icon: any; label: string; path: string; donoOnly?: boolean }> = [
